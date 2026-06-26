@@ -480,6 +480,10 @@
         <div class="s-label">Savings rating</div>
         <div class="s-val" id="savings-rating">—</div>
       </div>
+      <div class="savings-stat">
+        <div class="s-label">Score</div>
+        <div class="s-val" id="savings-grade">—</div>
+      </div>
     </div>
   </div>
 
@@ -621,7 +625,7 @@ function scoreCategory(catId, value, monthlyNet) {
   return { label: '✗ Over', cls: 'danger' };
 }
 function scoreSavings(pct) {
-  const grade = pct >= 0.30 ? 110 : Math.round((pct / 0.30) * 100);
+  const grade = pct >= 0.32 ? 110 : Math.round((pct / 0.32) * 100);
   let label, cls;
   if (pct < 0)         { label = 'In deficit';       cls = 'danger'; }
   else if (pct < 0.05) { label = 'Catastrophic 🚨';  cls = 'danger'; }
