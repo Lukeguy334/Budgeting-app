@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0F1117;
+    --surface: #1A1D27;
+    --surface2: #21253A;
+    --border: #2A2F45;
+    --text: #E8EAF0;
+    --muted: #6B7280;
+    --accent: #F5A623;
+    --good: #4ADE80;
+    --caution: #FACC15;
+    --danger: #F87171;
+    --blue: #60A5FA;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 32px 16px 64px;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; }
+
+  /* HEADER */
+  .header { margin-bottom: 36px; }
+  .header h1 {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .header h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  /* SALARY CARD */
+  .salary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px;
+  }
+  .salary-input-group { flex: 1; min-width: 220px; }
+  .salary-input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-prefix {
+    position: absolute;
+    left: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .salary-input-group input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px 12px 30px;
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .salary-input-group input:focus { border-color: var(--accent); }
+
+  .salary-summary {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .summary-stat { }
+  .summary-stat .stat-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .summary-stat .stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .summary-stat .stat-value.highlight { color: var(--accent); }
+
+  /* DONUT RING */
+  .ring-section {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .donut-wrap { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
+  .donut-wrap svg { transform: rotate(-90deg); }
+  .donut-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .donut-center .pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .donut-center .pct-label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .ring-legend { flex: 1; min-width: 200px; }
+  .ring-legend h3 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-name { flex: 1; color: var(--muted); }
+  .legend-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+
+  /* EXPENSE GRID */
+  .section-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .expense-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .expense-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    transition: border-color 0.2s;
+  }
+  .expense-card:focus-within { border-color: var(--border); }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .card-icon-name {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .card-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .card-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .card-score {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--surface2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .card-score.good { background: rgba(74,222,128,0.12); color: var(--good); }
+  .card-score.caution { background: rgba(250,204,21,0.12); color: var(--caution); }
+  .card-score.danger { background: rgba(248,113,113,0.12); color: var(--danger); }
+
+  .card-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .card-prefix {
+    position: absolute;
+    left: 11px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .expense-card input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px 9px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .expense-card input:focus { border-color: rgba(245,166,35,0.5); }
+
+  .card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .card-pct span { color: var(--text); font-weight: 500; }
+
+  /* PROGRESS BAR */
+  .mini-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--bg);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .mini-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease, background-color 0.3s;
+    background: var(--good);
+  }
+
+  /* SAVINGS CARD */
+  .savings-card {
+    background: linear-gradient(135deg, #1E1A0E 0%, #221E10 100%);
+    border: 1px solid rgba(245,166,35,0.3);
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+  }
+  .savings-left { flex: 1; min-width: 180px; }
+  .savings-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,166,35,0.6);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .savings-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 36px;
+    font-weight: 500;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .savings-amount.negative { color: var(--danger); }
+  .savings-meta {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .savings-stat .s-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  .savings-stat .s-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .savings-stat .s-val.good { color: var(--good); }
+  .savings-stat .s-val.caution { color: var(--caution); }
+  .savings-stat .s-val.danger { color: var(--danger); }
+
+  /* SCORE TOOLTIP */
+  .score-tip {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  /* FOOTER */
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 40px;
+  }
+
+  @media (max-width: 600px) {
+    .salary-card { flex-direction: column; }
+    .salary-summary { gap: 20px; }
+    .ring-section { flex-direction: column; align-items: flex-start; }
+    .donut-wrap { margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Florida · Monthly Budget</h1>
+    <h2>Where does your money go?</h2>
+
+    <div class="salary-card">
+      <div class="salary-input-group">
+        <label for="salary">Yearly salary (before taxes)</label>
+        <div class="input-wrap">
+          <span class="input-prefix">$</span>
+          <input type="number" id="salary" placeholder="60000" min="0" max="10000000">
+        </div>
+      </div>
+      <div class="salary-summary">
+        <div class="summary-stat">
+          <div class="stat-label">Federal + FICA tax</div>
+          <div class="stat-value" id="tax-display">—</div>
+        </div>
+        <div class="summary-stat">
+          <div class="stat-label">Monthly take-home</div>
+          <div class="stat-value highlight" id="monthly-display">—</div>
+        </div>
+        <div class="summary-stat">
+          <div class="stat-label">Effective tax rate</div>
+          <div class="stat-value" id="rate-display">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DONUT RING -->
+  <div class="ring-section" id="ring-section">
+    <div class="donut-wrap">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="62" fill="none" stroke="#21253A" stroke-width="18"/>
+        <circle id="ring-expenses" cx="80" cy="80" r="62" fill="none"
+          stroke="#60A5FA" stroke-width="18"
+          stroke-dasharray="0 389.56"
+          stroke-linecap="round"
+          style="transition: stroke-dasharray 0.4s ease;"/>
+        <circle id="ring-savings" cx="80" cy="80" r="62" fill="none"
+          stroke="#F5A623" stroke-width="18"
+          stroke-dasharray="0 389.56"
+          stroke-linecap="round"
+          style="transition: stroke-dasharray 0.4s ease;"/>
+      </svg>
+      <div class="donut-center">
+        <div class="pct" id="ring-pct">0%</div>
+        <div class="pct-label">allocated</div>
+      </div>
+    </div>
+    <div class="ring-legend">
+      <h3>Monthly snapshot</h3>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#60A5FA"></div>
+        <span class="legend-name">Total expenses</span>
+        <span class="legend-val" id="legend-expenses">$0</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#F5A623"></div>
+        <span class="legend-name">Savings</span>
+        <span class="legend-val" id="legend-savings">$0</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#21253A"></div>
+        <span class="legend-name">Unallocated</span>
+        <span class="legend-val" id="legend-unalloc">$0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPENSE CARDS -->
+  <div class="section-label">Monthly expenses</div>
+  <div class="expense-grid" id="expense-grid"></div>
+
+  <!-- SAVINGS CARD -->
+  <div class="savings-card" id="savings-card">
+    <div class="savings-left">
+      <div class="savings-label">💰 Monthly savings</div>
+      <div class="savings-amount" id="savings-amount">$0</div>
+    </div>
+    <div class="savings-meta">
+      <div class="savings-stat">
+        <div class="s-label">% of income saved</div>
+        <div class="s-val" id="savings-pct">0%</div>
+      </div>
+      <div class="savings-stat">
+        <div class="s-label">Projected yearly savings</div>
+        <div class="s-val" id="yearly-savings">$0</div>
+      </div>
+      <div class="savings-stat">
+        <div class="s-label">Savings rating</div>
+        <div class="s-val" id="savings-rating">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">Florida has no state income tax · Federal rates 2024 · Data auto-saved in your browser</div>
+</div>
+
+<script>
+// ─── CATEGORIES ───────────────────────────────────────────────────────────────
+const CATEGORIES = [
+  { id: 'rent',      name: 'Rent & Utilities',  icon: '🏠', thresholds: [0.30, 0.40] },
+  { id: 'groceries', name: 'Groceries',          icon: '🛒', thresholds: [0.10, 0.15] },
+  { id: 'restaurants', name: 'Restaurants',      icon: '🍽️', thresholds: [0.05, 0.10] },
+  { id: 'gas',       name: 'Gas',               icon: '⛽', thresholds: [0.04, 0.07] },
+  { id: 'car',       name: 'Car Insurance',     icon: '🚗', thresholds: [0.05, 0.08] },
+  { id: 'shopping',  name: 'Shopping',          icon: '🛍️', thresholds: [0.05, 0.10] },
+  { id: 'entertainment', name: 'Entertainment', icon: '🎬', thresholds: [0.03, 0.07] },
+  { id: 'subscriptions', name: 'Subscriptions', icon: '📱', thresholds: [0.02, 0.05] },
+  { id: 'health',    name: 'Health & Fitness',  icon: '💊', thresholds: [0.04, 0.08] },
+  { id: 'travel',    name: 'Travel',            icon: '✈️', thresholds: [0.05, 0.10] },
+  { id: 'personal',  name: 'Personal Care',     icon: '✂️', thresholds: [0.02, 0.04] },
+  { id: 'other',     name: 'Other',             icon: '📦', thresholds: [0.03, 0.07] },
+];
+
+// ─── TAX CALC (FL — no state income tax, federal + FICA 2024) ─────────────────
+function calcTax(gross) {
+  if (!gross || gross <= 0) return { netAnnual: 0, taxAnnual: 0, effectiveRate: 0 };
+
+  // FICA: 6.2% SS (up to 168,600) + 1.45% Medicare (no cap)
+  const ficaSS = Math.min(gross, 168600) * 0.062;
+  const ficaMed = gross * 0.0145;
+  const fica = ficaSS + ficaMed;
+
+  // 2024 standard deduction single
+  const stdDed = 14600;
+  const taxable = Math.max(0, gross - stdDed);
+
+  // Federal brackets single 2024
+  const brackets = [
+    [11600, 0.10],
+    [33550, 0.12],
+    [50400, 0.22],
+    [76500, 0.24],
+    [47150, 0.32],
+    [218900, 0.35],
+    [Infinity, 0.37],
+  ];
+  let fed = 0, remaining = taxable;
+  for (const [size, rate] of brackets) {
+    if (remaining <= 0) break;
+    const chunk = Math.min(remaining, size);
+    fed += chunk * rate;
+    remaining -= chunk;
+  }
+
+  const taxAnnual = fed + fica;
+  const netAnnual = gross - taxAnnual;
+  const effectiveRate = gross > 0 ? taxAnnual / gross : 0;
+  return { netAnnual, taxAnnual, effectiveRate };
+}
+
+// ─── FORMATTING ───────────────────────────────────────────────────────────────
+const fmt = n => n < 0
+  ? `-$${Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`
+  : `$${n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+
+const fmtShort = n => n < 0
+  ? `-$${Math.abs(Math.round(n)).toLocaleString()}`
+  : `$${Math.round(n).toLocaleString()}`;
+
+// ─── SCORING ──────────────────────────────────────────────────────────────────
+function scoreCategory(catId, value, monthlyNet) {
+  if (!monthlyNet || !value) return { label: '—', cls: '', tip: '' };
+  const cat = CATEGORIES.find(c => c.id === catId);
+  if (!cat) return { label: '—', cls: '', tip: '' };
+  const pct = value / monthlyNet;
+  const [warnPct, dangerPct] = cat.thresholds;
+  if (pct <= warnPct * 0.7) {
+    return { label: '✓ Great', cls: 'good', tip: 'Well within budget range' };
+  } else if (pct <= warnPct) {
+    return { label: '✓ Good', cls: 'good', tip: 'Healthy spend level' };
+  } else if (pct <= dangerPct) {
+    return { label: '⚠ High', cls: 'caution', tip: `Approaching ${Math.round(dangerPct*100)}% limit` };
+  } else {
+    return { label: '✗ Over', cls: 'danger', tip: `Exceeds recommended ${Math.round(dangerPct*100)}%` };
+  }
+}
+
+function scoreSavings(pct) {
+  if (pct < 0) return { label: '✗ In deficit', cls: 'danger' };
+  if (pct < 0.05) return { label: '✗ Critical', cls: 'danger' };
+  if (pct < 0.10) return { label: '⚠ Low', cls: 'caution' };
+  if (pct < 0.20) return { label: '✓ Decent', cls: 'good' };
+  if (pct < 0.30) return { label: '✓ Good', cls: 'good' };
+  return { label: '⭐ Excellent', cls: 'good' };
+}
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  salary: '',
+  expenses: {},
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('budget_v2');
+    if (raw) Object.assign(state, JSON.parse(raw));
+  } catch(e) {}
+}
+
+function saveState() {
+  try { localStorage.setItem('budget_v2', JSON.stringify(state)); } catch(e) {}
+}
+
+// ─── BUILD CARDS ─────────────────────────────────────────────────────────────
+function buildGrid() {
+  const grid = document.getElementById('expense-grid');
+  grid.innerHTML = '';
+  for (const cat of CATEGORIES) {
+    const val = state.expenses[cat.id] || '';
+    const card = document.createElement('div');
+    card.className = 'expense-card';
+    card.id = `card-${cat.id}`;
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-icon-name">
+          <div class="card-icon">${cat.icon}</div>
+          <div class="card-name">${cat.name}</div>
+        </div>
+        <div class="card-score" id="score-${cat.id}">—</div>
+      </div>
+      <div class="card-input-wrap">
+        <span class="card-prefix">$</span>
+        <input type="number" id="input-${cat.id}" placeholder="0.00" min="0"
+          value="${val}" data-id="${cat.id}">
+      </div>
+      <div class="card-meta">
+        <div class="card-pct" id="pct-${cat.id}">— of income</div>
+      </div>
+      <div class="mini-bar"><div class="mini-bar-fill" id="bar-${cat.id}" style="width:0%"></div></div>
+    `;
+    grid.appendChild(card);
+    card.querySelector('input').addEventListener('input', e => {
+      state.expenses[cat.id] = parseFloat(e.target.value) || '';
+      saveState();
+      recalc();
+    });
+  }
+}
+
+// ─── RECALC ──────────────────────────────────────────────────────────────────
+function recalc() {
+  const gross = parseFloat(state.salary) || 0;
+  const { netAnnual, taxAnnual, effectiveRate } = calcTax(gross);
+  const monthlyNet = netAnnual / 12;
+  const monthlyTax = taxAnnual / 12;
+
+  // Update header stats
+  document.getElementById('tax-display').textContent = gross ? fmt(monthlyTax) + '/mo' : '—';
+  document.getElementById('monthly-display').textContent = gross ? fmt(monthlyNet) : '—';
+  document.getElementById('rate-display').textContent = gross ? (effectiveRate * 100).toFixed(1) + '%' : '—';
+
+  // Sum expenses
+  let totalExpenses = 0;
+  for (const cat of CATEGORIES) {
+    const v = parseFloat(state.expenses[cat.id]) || 0;
+    totalExpenses += v;
+
+    // Score + pct
+    const score = scoreCategory(cat.id, v, monthlyNet);
+    const scorEl = document.getElementById(`score-${cat.id}`);
+    const pctEl = document.getElementById(`pct-${cat.id}`);
+    const barEl = document.getElementById(`bar-${cat.id}`);
+    if (scorEl) {
+      scorEl.textContent = v ? score.label : '—';
+      scorEl.className = 'card-score' + (v ? ' ' + score.cls : '');
+    }
+    if (pctEl) {
+      if (monthlyNet && v) {
+        const p = (v / monthlyNet * 100).toFixed(1);
+        pctEl.innerHTML = `<span>${p}%</span> of monthly income`;
+      } else {
+        pctEl.textContent = '— of income';
+      }
+    }
+    if (barEl) {
+      const barPct = monthlyNet ? Math.min(100, v / monthlyNet * 100) : 0;
+      barEl.style.width = barPct + '%';
+      const cat2 = CATEGORIES.find(c => c.id === cat.id);
+      const [wp, dp] = cat2.thresholds;
+      const ratio = v / (monthlyNet || 1);
+      barEl.style.background = ratio <= wp ? 'var(--good)' : ratio <= dp ? 'var(--caution)' : 'var(--danger)';
+    }
+  }
+
+  const savings = monthlyNet - totalExpenses;
+  const savingsPct = monthlyNet ? savings / monthlyNet : 0;
+  const unalloc = monthlyNet - totalExpenses;
+
+  // Savings card
+  const savingsEl = document.getElementById('savings-amount');
+  savingsEl.textContent = fmt(savings);
+  savingsEl.className = 'savings-amount' + (savings < 0 ? ' negative' : '');
+  const sPctEl = document.getElementById('savings-pct');
+  sPctEl.textContent = monthlyNet ? (savingsPct * 100).toFixed(1) + '%' : '—';
+  const sScore = scoreSavings(savingsPct);
+  sPctEl.className = 's-val ' + sScore.cls;
+  document.getElementById('yearly-savings').textContent = monthlyNet ? fmtShort(savings * 12) : '—';
+  const ratingEl = document.getElementById('savings-rating');
+  ratingEl.textContent = monthlyNet ? sScore.label : '—';
+  ratingEl.className = 's-val ' + sScore.cls;
+
+  // Donut
+  const CIRC = 2 * Math.PI * 62; // 389.56
+  const expPct = monthlyNet ? Math.min(1, totalExpenses / monthlyNet) : 0;
+  const savPct = monthlyNet ? Math.max(0, Math.min(1 - expPct, savings / monthlyNet)) : 0;
+  const expDash = expPct * CIRC;
+  const savDash = savPct * CIRC;
+
+  document.getElementById('ring-expenses').setAttribute('stroke-dasharray', `${expDash} ${CIRC - expDash}`);
+  // savings arc starts after expenses
+  document.getElementById('ring-savings').setAttribute('stroke-dasharray', `0 ${expDash} ${savDash} ${CIRC - expDash - savDash}`);
+  // simpler: offset savings start by rotating
+  // Use stroke-dashoffset trick
+  const savRing = document.getElementById('ring-savings');
+  savRing.setAttribute('stroke-dasharray', `${savDash} ${CIRC - savDash}`);
+  savRing.setAttribute('stroke-dashoffset', -expDash);
+
+  const totalPct = monthlyNet ? Math.min(100, Math.round((totalExpenses / monthlyNet) * 100)) : 0;
+  document.getElementById('ring-pct').textContent = totalPct + '%';
+
+  // Legend
+  document.getElementById('legend-expenses').textContent = fmt(totalExpenses);
+  document.getElementById('legend-savings').textContent = fmt(Math.max(0, savings));
+  document.getElementById('legend-unalloc').textContent = fmt(Math.max(0, unalloc));
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+loadState();
+buildGrid();
+
+const salaryInput = document.getElementById('salary');
+salaryInput.value = state.salary || '';
+salaryInput.addEventListener('input', e => {
+  state.salary = e.target.value;
+  saveState();
+  recalc();
+});
+
+// restore inputs
+for (const cat of CATEGORIES) {
+  const el = document.getElementById(`input-${cat.id}`);
+  if (el && state.expenses[cat.id]) el.value = state.expenses[cat.id];
+}
+
+recalc();
+</script>
+</body>
+</html>
