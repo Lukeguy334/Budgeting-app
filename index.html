@@ -621,12 +621,18 @@ function scoreCategory(catId, value, monthlyNet) {
   return { label: '✗ Over', cls: 'danger' };
 }
 function scoreSavings(pct) {
-  if (pct < 0)    return { label: '✗ In deficit', cls: 'danger' };
-  if (pct < 0.05) return { label: '✗ Critical',   cls: 'danger' };
-  if (pct < 0.10) return { label: '⚠ Low',        cls: 'caution' };
-  if (pct < 0.20) return { label: '✓ Decent',     cls: 'good' };
-  if (pct < 0.30) return { label: '✓ Good',       cls: 'good' };
-  return { label: '⭐ Excellent', cls: 'good' };
+  const grade = pct >= 0.30 ? 110 : Math.round((pct / 0.30) * 100);
+  let label, cls;
+  if (pct < 0)         { label = 'In deficit';       cls = 'danger'; }
+  else if (pct < 0.05) { label = 'Catastrophic 🚨';  cls = 'danger'; }
+  else if (pct < 0.10) { label = 'Critical ⚠️';      cls = 'danger'; }
+  else if (pct < 0.15) { label = 'Low 🪫';            cls = 'caution'; }
+  else if (pct < 0.20) { label = 'Decent 👌';         cls = 'caution'; }
+  else if (pct < 0.23) { label = 'Good 👍';           cls = 'good'; }
+  else if (pct < 0.27) { label = 'Great 🔥';          cls = 'good'; }
+  else if (pct < 0.30) { label = '⭐ Excellent';      cls = 'good'; }
+  else                 { label = 'Astronomical 🚀';   cls = 'good'; }
+  return { label, cls, grade };
 }
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
@@ -732,6 +738,9 @@ function recalcBudget() {
   const rEl = document.getElementById('savings-rating');
   rEl.textContent = monthlyNet ? sScore.label : '—';
   rEl.className = 's-val ' + sScore.cls;
+  const gEl = document.getElementById('savings-grade');
+  gEl.textContent = monthlyNet ? sScore.grade + '/100' : '—';
+  gEl.className = 's-val ' + sScore.cls;
 
   // Donut
   const CIRC = 2 * Math.PI * 62;
