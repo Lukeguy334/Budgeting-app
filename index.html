@@ -53,7 +53,7 @@
   .ring-section { display: flex; align-items: center; gap: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 28px; flex-wrap: wrap; }
   .donut-wrap { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
   .donut-wrap svg { transform: rotate(-90deg); }
-  .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+  .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
   .donut-center .pct { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; line-height: 1; }
   .donut-center .pct-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
   .ring-legend { flex: 1; min-width: 200px; }
@@ -82,6 +82,7 @@
   .card-pct span { color: var(--text); font-weight: 500; }
   .mini-bar { width: 100%; height: 4px; background: var(--bg); border-radius: 2px; margin-top: 8px; overflow: hidden; }
   .mini-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease, background-color 0.3s; }
+  .card-hint { font-size: 11px; color: var(--muted); margin-top: 5px; font-style: italic; }
 
   /* SAVINGS CARD */
   .savings-card { background: linear-gradient(135deg, #1E1A0E 0%, #221E10 100%); border: 1px solid rgba(245,166,35,0.3); border-radius: 16px; padding: 24px 28px; margin-top: 14px; }
@@ -99,8 +100,8 @@
 
   /* SAVINGS ALLOCATION */
   .alloc-section { border-top: 1px solid rgba(245,166,35,0.15); padding-top: 20px; }
-  .alloc-header { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,166,35,0.6); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
-  .alloc-warning { font-size: 11px; color: var(--danger); font-weight: 600; letter-spacing: 0; text-transform: none; }
+  .alloc-header { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,166,35,0.6); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .alloc-warning { font-size: 11px; font-weight: 600; letter-spacing: 0; text-transform: none; }
   .alloc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
   .alloc-card { background: rgba(0,0,0,0.2); border: 1px solid rgba(245,166,35,0.12); border-radius: 12px; padding: 14px 16px; }
   .alloc-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
@@ -113,26 +114,7 @@
   .alloc-card input:focus { border-color: var(--accent); }
   .alloc-dollar { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); white-space: nowrap; min-width: 70px; text-align: right; }
 
-  /* TRACKER PAGE */
-  .tracker-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 28px; }
-  .tracker-cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
-  .tcc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .tcc-name { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
-  .tcc-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: var(--surface2); color: var(--muted); }
-  .tcc-badge.good { background: rgba(74,222,128,0.12); color: var(--good); }
-  .tcc-badge.caution { background: rgba(250,204,21,0.12); color: var(--caution); }
-  .tcc-badge.danger { background: rgba(248,113,113,0.12); color: var(--danger); }
-  .tcc-amounts { display: flex; justify-content: space-between; align-items: baseline; font-family: 'DM Mono', monospace; margin-bottom: 8px; }
-  .tcc-spent { font-size: 18px; font-weight: 500; }
-  .tcc-budget { font-size: 12px; color: var(--muted); }
-  .tcc-remaining { font-size: 11px; margin-bottom: 8px; }
-  .tcc-remaining.over { color: var(--danger); }
-  .tcc-remaining.under { color: var(--good); }
-  .tcc-remaining.warn { color: var(--caution); }
-  .tcc-bar { width: 100%; height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
-  .tcc-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s, background 0.3s; }
-
-  /* LOG FORM */
+  /* TRACKER / SAVINGS LOG SHARED */
   .log-form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px 28px; margin-bottom: 28px; }
   .log-form-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 18px; }
   .log-form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
@@ -142,12 +124,13 @@
   .log-field input:focus, .log-field select:focus { border-color: var(--accent); }
   .log-field.amount-field input { font-family: 'DM Mono', monospace; font-size: 15px; width: 130px; padding-left: 24px; }
   .log-field.desc-field input { width: 200px; }
-  .log-field.cat-field select { width: 190px; }
+  .log-field.cat-field select { width: 200px; }
   .log-field.date-field input { width: 145px; }
   .log-amount-wrap { position: relative; }
   .log-amount-wrap .log-prefix { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-family: 'DM Mono', monospace; font-size: 14px; color: var(--muted); pointer-events: none; }
   .log-btn { background: var(--accent); color: #0F1117; border: none; border-radius: 9px; padding: 10px 22px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; align-self: flex-end; }
   .log-btn:hover { opacity: 0.85; }
+  .log-btn.green { background: var(--good); }
 
   /* LOG LIST */
   .log-list-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
@@ -163,9 +146,30 @@
   .log-entry-info { flex: 1; min-width: 0; }
   .log-entry-desc { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .log-entry-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .log-entry-amount { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; color: var(--danger); flex-shrink: 0; }
+  .log-entry-amount { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; flex-shrink: 0; }
+  .log-entry-amount.expense { color: var(--danger); }
+  .log-entry-amount.saving { color: var(--good); }
   .log-entry-delete { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px 6px; border-radius: 5px; transition: color 0.2s, background 0.2s; flex-shrink: 0; }
   .log-entry-delete:hover { color: var(--danger); background: rgba(248,113,113,0.1); }
+
+  /* TRACKER */
+  .tracker-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .tracker-cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .tcc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .tcc-name { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+  .tcc-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: var(--surface2); color: var(--muted); white-space: nowrap; }
+  .tcc-badge.good { background: rgba(74,222,128,0.12); color: var(--good); }
+  .tcc-badge.caution { background: rgba(250,204,21,0.12); color: var(--caution); }
+  .tcc-badge.danger { background: rgba(248,113,113,0.12); color: var(--danger); }
+  .tcc-amounts { display: flex; justify-content: space-between; align-items: baseline; font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .tcc-spent { font-size: 18px; font-weight: 500; }
+  .tcc-budget { font-size: 12px; color: var(--muted); }
+  .tcc-remaining { font-size: 11px; margin-bottom: 8px; }
+  .tcc-remaining.over { color: var(--danger); }
+  .tcc-remaining.under { color: var(--good); }
+  .tcc-remaining.warn { color: var(--caution); }
+  .tcc-bar { width: 100%; height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .tcc-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s, background 0.3s; }
 
   /* TRACKER CONTROLS */
   .tracker-controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
@@ -175,6 +179,15 @@
   .spent-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 28px; align-items: center; }
   .spent-stat .sp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 3px; }
   .spent-stat .sp-val { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; }
+
+  /* SAVINGS LOG PAGE */
+  .savings-log-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .sl-bucket-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .sl-bucket-top { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+  .sl-bucket-icon { font-size: 18px; }
+  .sl-bucket-name { font-size: 13px; font-weight: 500; }
+  .sl-bucket-total { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--good); }
+  .sl-bucket-count { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
   .footer-note { text-align: center; font-size: 12px; color: var(--muted); margin-top: 40px; }
 
@@ -194,8 +207,9 @@
 <!-- TAB BAR -->
 <div class="tab-bar">
   <div class="tab-bar-title">💰 BudgetTracker</div>
-  <button class="tab-btn active" onclick="showTab('budget')">📊 Budget</button>
-  <button class="tab-btn" onclick="showTab('tracker')">📝 Expense Log</button>
+  <button class="tab-btn active"  onclick="showTab('budget')">📊 Budget</button>
+  <button class="tab-btn"         onclick="showTab('tracker')">📝 Expenses</button>
+  <button class="tab-btn"         onclick="showTab('savingslog')">💾 Savings Log</button>
   <div class="tab-bar-actions">
     <button class="tb-btn export-btn" onclick="exportData()">⬇ Export</button>
     <button class="tb-btn import-btn" onclick="document.getElementById('import-file').click()">⬆ Import</button>
@@ -203,7 +217,7 @@
   </div>
 </div>
 
-<!-- BUDGET PAGE -->
+<!-- ══ BUDGET PAGE ══ -->
 <div class="tab-page active" id="tab-budget">
   <div class="page-heading">
     <h1>Florida · Monthly Budget</h1>
@@ -239,7 +253,7 @@
       <svg width="160" height="160" viewBox="0 0 160 160">
         <circle cx="80" cy="80" r="62" fill="none" stroke="#21253A" stroke-width="18"/>
         <circle id="ring-expenses" cx="80" cy="80" r="62" fill="none" stroke="#60A5FA" stroke-width="18" stroke-dasharray="0 389.56" stroke-linecap="round" style="transition:stroke-dasharray 0.4s ease;"/>
-        <circle id="ring-savings" cx="80" cy="80" r="62" fill="none" stroke="#F5A623" stroke-width="18" stroke-dasharray="0 389.56" stroke-linecap="round" style="transition:stroke-dasharray 0.4s ease;"/>
+        <circle id="ring-savings"  cx="80" cy="80" r="62" fill="none" stroke="#F5A623" stroke-width="18" stroke-dasharray="0 389.56" stroke-linecap="round" style="transition:stroke-dasharray 0.4s ease;"/>
       </svg>
       <div class="donut-center">
         <div class="pct" id="ring-pct">0%</div>
@@ -257,7 +271,6 @@
   <div class="section-label">Monthly budget by category</div>
   <div class="expense-grid" id="expense-grid"></div>
 
-  <!-- SAVINGS CARD -->
   <div class="savings-card">
     <div class="savings-top">
       <div class="savings-left">
@@ -265,26 +278,12 @@
         <div class="savings-amount" id="savings-amount">$0</div>
       </div>
       <div class="savings-meta">
-        <div class="savings-stat">
-          <div class="s-label">% of income saved</div>
-          <div class="s-val" id="savings-pct">0%</div>
-        </div>
-        <div class="savings-stat">
-          <div class="s-label">Projected yearly savings</div>
-          <div class="s-val" id="yearly-savings">$0</div>
-        </div>
-        <div class="savings-stat">
-          <div class="s-label">Savings rating</div>
-          <div class="s-val" id="savings-rating">—</div>
-        </div>
-        <div class="savings-stat">
-          <div class="s-label">Score</div>
-          <div class="s-val" id="savings-grade">—</div>
-        </div>
+        <div class="savings-stat"><div class="s-label">% of income saved</div><div class="s-val" id="savings-pct">0%</div></div>
+        <div class="savings-stat"><div class="s-label">Projected yearly savings</div><div class="s-val" id="yearly-savings">$0</div></div>
+        <div class="savings-stat"><div class="s-label">Savings rating</div><div class="s-val" id="savings-rating">—</div></div>
+        <div class="savings-stat"><div class="s-label">Score</div><div class="s-val" id="savings-grade">—</div></div>
       </div>
     </div>
-
-    <!-- SAVINGS ALLOCATION -->
     <div class="alloc-section">
       <div class="alloc-header">
         <span>Allocate your savings</span>
@@ -297,7 +296,7 @@
   <div class="footer-note">Florida has no state income tax · Federal rates 2024 · All data saved in your browser</div>
 </div>
 
-<!-- TRACKER PAGE -->
+<!-- ══ EXPENSE LOG PAGE ══ -->
 <div class="tab-page" id="tab-tracker">
   <div class="page-heading">
     <h1>Expense Log</h1>
@@ -358,72 +357,137 @@
   <div class="footer-note">All data saved locally in your browser</div>
 </div>
 
+<!-- ══ SAVINGS LOG PAGE ══ -->
+<div class="tab-page" id="tab-savingslog">
+  <div class="page-heading">
+    <h1>Savings Log</h1>
+    <h2>Track what you're building</h2>
+  </div>
+
+  <div class="log-form-card">
+    <h3>➕ Log a savings entry</h3>
+    <div class="log-form-row">
+      <div class="log-field amount-field">
+        <label>Amount</label>
+        <div class="log-amount-wrap">
+          <span class="log-prefix">$</span>
+          <input type="number" id="sl-amount" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="log-field desc-field">
+        <label>Note</label>
+        <input type="text" id="sl-desc" placeholder="e.g. Roth IRA contribution">
+      </div>
+      <div class="log-field cat-field">
+        <label>Bucket</label>
+        <select id="sl-cat"></select>
+      </div>
+      <div class="log-field date-field">
+        <label>Date</label>
+        <input type="date" id="sl-date">
+      </div>
+      <button class="log-btn green" onclick="logSaving()">Add Entry</button>
+    </div>
+  </div>
+
+  <div class="tracker-controls">
+    <div class="section-label" style="margin:0">Savings by bucket</div>
+    <div class="month-filter">
+      <label>Month</label>
+      <select id="sl-month-filter" onchange="renderSavingsLog()"></select>
+    </div>
+  </div>
+
+  <!-- Bucket totals -->
+  <div class="savings-log-summary" id="sl-bucket-summary"></div>
+
+  <!-- Running total banner -->
+  <div class="spent-banner" style="margin-bottom:20px;">
+    <div class="spent-stat"><div class="sp-label">Saved this month</div><div class="sp-val" id="sl-banner-month" style="color:var(--good)">$0.00</div></div>
+    <div class="spent-stat"><div class="sp-label">Saved this year</div><div class="sp-val" id="sl-banner-year" style="color:var(--good)">$0.00</div></div>
+    <div class="spent-stat"><div class="sp-label">All-time total</div><div class="sp-val" id="sl-banner-total" style="color:var(--accent)">$0.00</div></div>
+  </div>
+
+  <div class="log-list-card">
+    <div class="log-list-header">
+      <h3>Savings history</h3>
+      <button class="clear-btn" onclick="clearMonthSavings()">Clear this month</button>
+    </div>
+    <div id="sl-log-list"></div>
+  </div>
+
+  <div class="footer-note">All data saved locally in your browser</div>
+</div>
+
 <script>
 // ─── CATEGORIES ───────────────────────────────────────────────────────────────
+// variable: true = "stay under" scoring; false = fixed cost scoring
 const CATEGORIES = [
-  { id: 'rent',          name: 'Rent & Utilities',   icon: '🏠', thresholds: [0.30, 0.40] },
-  { id: 'groceries',     name: 'Groceries',           icon: '🛒', thresholds: [0.10, 0.15] },
-  { id: 'restaurants',   name: 'Restaurants',         icon: '🍽️', thresholds: [0.05, 0.10] },
-  { id: 'gas',           name: 'Gas',                 icon: '⛽', thresholds: [0.04, 0.07] },
-  { id: 'car_insurance', name: 'Car Insurance',       icon: '🚗', thresholds: [0.05, 0.08] },
-  { id: 'car_maint',     name: 'Car Maintenance',     icon: '🔧', thresholds: [0.02, 0.05] },
-  { id: 'phone',         name: 'Phone Bill',          icon: '📞', thresholds: [0.02, 0.04] },
-  { id: 'internet',      name: 'Internet',            icon: '📶', thresholds: [0.01, 0.03] },
-  { id: 'shopping',      name: 'Shopping & Clothing', icon: '🛍️', thresholds: [0.05, 0.10] },
-  { id: 'entertainment', name: 'Entertainment',       icon: '🎬', thresholds: [0.03, 0.07] },
-  { id: 'subscriptions', name: 'Subscriptions',       icon: '📱', thresholds: [0.02, 0.05] },
-  { id: 'health',        name: 'Health & Medical',    icon: '💊', thresholds: [0.04, 0.08] },
-  { id: 'gym',           name: 'Gym & Fitness',       icon: '🏋️', thresholds: [0.01, 0.03] },
-  { id: 'sunny',         name: 'Sunny 🐾',            icon: '🐕', thresholds: [0.03, 0.06] },
-  { id: 'travel',        name: 'Travel',              icon: '✈️', thresholds: [0.05, 0.10] },
-  { id: 'personal',      name: 'Personal Care',       icon: '✂️', thresholds: [0.02, 0.04] },
-  { id: 'student_loans', name: 'Student Loans',       icon: '🎓', thresholds: [0.08, 0.15] },
-  { id: 'gifts',         name: 'Gifts & Social',      icon: '🎁', thresholds: [0.02, 0.05] },
-  { id: 'coffee',        name: 'Coffee & Drinks',     icon: '☕', thresholds: [0.02, 0.04] },
-  { id: 'other',         name: 'Other',               icon: '📦', thresholds: [0.03, 0.07] },
+  { id: 'rent',         name: 'Rent',                  icon: '🏠', thresholds: [0.25, 0.35], variable: false },
+  { id: 'utilities',    name: 'Utilities',              icon: '💡', thresholds: [0.04, 0.07], variable: true  },
+  { id: 'groceries',    name: 'Groceries',              icon: '🛒', thresholds: [0.10, 0.15], variable: true  },
+  { id: 'doordash',     name: 'DoorDash / Fast Food',   icon: '🛵', thresholds: [0.04, 0.08], variable: true  },
+  { id: 'restaurants',  name: 'Dinner & Drinks',        icon: '🍽️', thresholds: [0.05, 0.10], variable: true  },
+  { id: 'gas',          name: 'Gas',                    icon: '⛽', thresholds: [0.04, 0.07], variable: true  },
+  { id: 'car_insurance',name: 'Car Insurance',          icon: '🚗', thresholds: [0.05, 0.08], variable: false },
+  { id: 'car_maint',    name: 'Car Maintenance',        icon: '🔧', thresholds: [0.02, 0.05], variable: true  },
+  { id: 'phone',        name: 'Phone Bill',             icon: '📞', thresholds: [0.02, 0.04], variable: false },
+  { id: 'renters_ins',  name: 'Renters Insurance',      icon: '🏡', thresholds: [0.01, 0.02], variable: false },
+  { id: 'personal_ins', name: 'Personal Insurance',     icon: '🩺', thresholds: [0.04, 0.08], variable: false },
+  { id: 'shopping',     name: 'Shopping & Clothing',    icon: '🛍️', thresholds: [0.05, 0.10], variable: true  },
+  { id: 'entertainment',name: 'Entertainment',          icon: '🎬', thresholds: [0.03, 0.07], variable: true  },
+  { id: 'subscriptions',name: 'Subscriptions',          icon: '📱', thresholds: [0.02, 0.05], variable: false },
+  { id: 'health',       name: 'Health & Medical',       icon: '💊', thresholds: [0.04, 0.08], variable: true  },
+  { id: 'gym',          name: 'Gym & Fitness',          icon: '🏋️', thresholds: [0.01, 0.03], variable: false },
+  { id: 'sunny',        name: 'Sunny 🐾',               icon: '🐕', thresholds: [0.03, 0.06], variable: true  },
+  { id: 'sunny_vet',    name: 'Sunny — Vet Bills',      icon: '🩺', thresholds: [0.02, 0.04], variable: true  },
+  { id: 'personal',     name: 'Personal Care',          icon: '✂️', thresholds: [0.02, 0.04], variable: true  },
+  { id: 'other',        name: 'Other',                  icon: '📦', thresholds: [0.03, 0.07], variable: true  },
 ];
 
 const ALLOC_BUCKETS = [
-  { id: '401k',         name: '401(k)',          icon: '🏦' },
-  { id: 'home',         name: 'Saving for Home', icon: '🏡' },
-  { id: 'investments',  name: 'Investments',     icon: '📈' },
-  { id: 'emergency',    name: 'Emergency Fund',  icon: '🛡️' },
+  { id: '401k',        name: '401(k)',           icon: '🏦' },
+  { id: 'home',        name: 'Saving for Home',  icon: '🏡' },
+  { id: 'investments', name: 'Investments',      icon: '📈' },
+  { id: 'emergency',   name: 'Emergency Fund',   icon: '🛡️' },
 ];
 
 // ─── TAX CALC ────────────────────────────────────────────────────────────────
 function calcTax(gross) {
   if (!gross || gross <= 0) return { netAnnual: 0, taxAnnual: 0, effectiveRate: 0 };
-  const ficaSS = Math.min(gross, 168600) * 0.062;
-  const ficaMed = gross * 0.0145;
-  const fica = ficaSS + ficaMed;
+  const fica    = Math.min(gross, 168600) * 0.062 + gross * 0.0145;
   const taxable = Math.max(0, gross - 14600);
   const brackets = [[11600,0.10],[33550,0.12],[50400,0.22],[76500,0.24],[47150,0.32],[218900,0.35],[Infinity,0.37]];
   let fed = 0, rem = taxable;
-  for (const [size, rate] of brackets) {
-    if (rem <= 0) break;
-    fed += Math.min(rem, size) * rate;
-    rem -= Math.min(rem, size);
-  }
+  for (const [size, rate] of brackets) { if (rem <= 0) break; fed += Math.min(rem, size) * rate; rem -= Math.min(rem, size); }
   const taxAnnual = fed + fica;
   return { netAnnual: gross - taxAnnual, taxAnnual, effectiveRate: taxAnnual / gross };
 }
 
 // ─── FORMATTING ──────────────────────────────────────────────────────────────
-const fmt = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmt      = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 const fmtShort = n => (n < 0 ? '-' : '') + '$' + Math.abs(Math.round(n)).toLocaleString();
 
 // ─── SCORING ─────────────────────────────────────────────────────────────────
-function scoreCategory(catId, value, monthlyNet) {
+function scoreCategory(cat, value, monthlyNet) {
   if (!monthlyNet || !value) return { label: '—', cls: '' };
-  const cat = CATEGORIES.find(c => c.id === catId);
-  if (!cat) return { label: '—', cls: '' };
   const pct = value / monthlyNet;
   const [wp, dp] = cat.thresholds;
-  if (pct <= wp * 0.7) return { label: '✓ Great', cls: 'good' };
-  if (pct <= wp)       return { label: '✓ Good',  cls: 'good' };
-  if (pct <= dp)       return { label: '⚠ High',  cls: 'caution' };
-  return { label: '✗ Over', cls: 'danger' };
+  if (cat.variable) {
+    // "stay under" — good if under warn threshold
+    if (pct <= wp * 0.5) return { label: '✓ Great',  cls: 'good' };
+    if (pct <= wp)       return { label: '✓ Under',  cls: 'good' };
+    if (pct <= dp)       return { label: '⚠ Getting high', cls: 'caution' };
+    return { label: '✗ Over limit', cls: 'danger' };
+  } else {
+    // fixed — good as long as it's reasonable
+    if (pct <= wp * 0.7) return { label: '✓ Great', cls: 'good' };
+    if (pct <= wp)       return { label: '✓ Good',  cls: 'good' };
+    if (pct <= dp)       return { label: '⚠ High',  cls: 'caution' };
+    return { label: '✗ Over', cls: 'danger' };
+  }
 }
+
 function scoreSavings(pct) {
   const grade = pct >= 0.32 ? 110 : Math.round((pct / 0.32) * 100);
   let label, cls;
@@ -440,21 +504,22 @@ function scoreSavings(pct) {
 }
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
-let state = { salary: '', expenses: {}, logs: [], alloc: {} };
+let state = { salary: '', expenses: {}, logs: [], alloc: {}, savingsLogs: [] };
 
 function loadState() {
   try {
-    const raw = localStorage.getItem('budget_v4');
+    const raw = localStorage.getItem('budget_v5');
     if (raw) {
-      const parsed = JSON.parse(raw);
-      Object.assign(state, parsed);
-      if (!state.alloc) state.alloc = {};
-      if (!state.logs)  state.logs  = [];
+      const p = JSON.parse(raw);
+      Object.assign(state, p);
+      if (!state.alloc)       state.alloc       = {};
+      if (!state.logs)        state.logs        = [];
+      if (!state.savingsLogs) state.savingsLogs = [];
     }
   } catch(e) {}
 }
 function saveState() {
-  try { localStorage.setItem('budget_v4', JSON.stringify(state)); } catch(e) {}
+  try { localStorage.setItem('budget_v5', JSON.stringify(state)); } catch(e) {}
 }
 
 // ─── TAB SWITCHING ────────────────────────────────────────────────────────────
@@ -462,18 +527,21 @@ function showTab(name) {
   document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
+  const map = { budget: 'budget', tracker: 'expenses', savingslog: 'savings' };
   document.querySelectorAll('.tab-btn').forEach(b => {
-    if (b.textContent.toLowerCase().includes(name === 'budget' ? 'budget' : 'expense')) b.classList.add('active');
+    if (b.textContent.toLowerCase().includes(map[name])) b.classList.add('active');
   });
-  if (name === 'tracker') renderTracker();
+  if (name === 'tracker')    renderTracker();
+  if (name === 'savingslog') renderSavingsLog();
 }
 
-// ─── BUILD BUDGET GRID ───────────────────────────────────────────────────────
+// ─── BUDGET GRID ─────────────────────────────────────────────────────────────
 function buildGrid() {
   const grid = document.getElementById('expense-grid');
   grid.innerHTML = '';
   for (const cat of CATEGORIES) {
-    const val = state.expenses[cat.id] || '';
+    const val  = state.expenses[cat.id] || '';
+    const hint = cat.variable ? 'Budget limit — aim to stay under' : 'Fixed cost — set your expected amount';
     const card = document.createElement('div');
     card.className = 'expense-card';
     card.innerHTML = `
@@ -490,6 +558,7 @@ function buildGrid() {
       </div>
       <div class="card-pct" id="pct-${cat.id}">— of income</div>
       <div class="mini-bar"><div class="mini-bar-fill" id="bar-${cat.id}" style="width:0%"></div></div>
+      <div class="card-hint">${hint}</div>
     `;
     grid.appendChild(card);
     card.querySelector('input').addEventListener('input', e => {
@@ -500,19 +569,16 @@ function buildGrid() {
   }
 }
 
-// ─── BUILD ALLOC GRID ────────────────────────────────────────────────────────
+// ─── ALLOC GRID ──────────────────────────────────────────────────────────────
 function buildAllocGrid() {
   const grid = document.getElementById('alloc-grid');
   grid.innerHTML = '';
   for (const b of ALLOC_BUCKETS) {
-    const val = state.alloc[b.id] || '';
+    const val  = state.alloc[b.id] || '';
     const card = document.createElement('div');
     card.className = 'alloc-card';
     card.innerHTML = `
-      <div class="alloc-card-top">
-        <span class="alloc-icon">${b.icon}</span>
-        <span class="alloc-name">${b.name}</span>
-      </div>
+      <div class="alloc-card-top"><span class="alloc-icon">${b.icon}</span><span class="alloc-name">${b.name}</span></div>
       <div class="alloc-row">
         <div class="alloc-pct-wrap">
           <input type="number" id="alloc-${b.id}" placeholder="0" min="0" max="100" step="1" value="${val}">
@@ -535,25 +601,23 @@ function recalcBudget() {
   const gross = parseFloat(state.salary) || 0;
   const { netAnnual, taxAnnual, effectiveRate } = calcTax(gross);
   const monthlyNet = netAnnual / 12;
-  const monthlyTax = taxAnnual / 12;
 
-  document.getElementById('tax-display').textContent    = gross ? fmt(monthlyTax) + '/mo' : '—';
+  document.getElementById('tax-display').textContent     = gross ? fmt(taxAnnual/12) + '/mo' : '—';
   document.getElementById('monthly-display').textContent = gross ? fmt(monthlyNet) : '—';
-  document.getElementById('rate-display').textContent   = gross ? (effectiveRate * 100).toFixed(1) + '%' : '—';
+  document.getElementById('rate-display').textContent    = gross ? (effectiveRate*100).toFixed(1)+'%' : '—';
 
   let totalExpenses = 0;
   for (const cat of CATEGORIES) {
-    const v = parseFloat(state.expenses[cat.id]) || 0;
+    const v      = parseFloat(state.expenses[cat.id]) || 0;
     totalExpenses += v;
-    const score  = scoreCategory(cat.id, v, monthlyNet);
+    const score  = scoreCategory(cat, v, monthlyNet);
     const scorEl = document.getElementById('score-' + cat.id);
     const pctEl  = document.getElementById('pct-'   + cat.id);
     const barEl  = document.getElementById('bar-'   + cat.id);
-    if (scorEl) { scorEl.textContent = v ? score.label : '—'; scorEl.className = 'card-score' + (v ? ' ' + score.cls : ''); }
+    if (scorEl) { scorEl.textContent = v ? score.label : '—'; scorEl.className = 'card-score' + (v ? ' '+score.cls : ''); }
     if (pctEl)  { pctEl.innerHTML = (monthlyNet && v) ? `<span>${(v/monthlyNet*100).toFixed(1)}%</span> of monthly income` : '— of income'; }
     if (barEl)  {
-      const barPct = monthlyNet ? Math.min(100, v / monthlyNet * 100) : 0;
-      barEl.style.width = barPct + '%';
+      barEl.style.width = monthlyNet ? Math.min(100, v/monthlyNet*100)+'%' : '0%';
       const [wp, dp] = cat.thresholds;
       const ratio = v / (monthlyNet || 1);
       barEl.style.background = ratio <= wp ? 'var(--good)' : ratio <= dp ? 'var(--caution)' : 'var(--danger)';
@@ -562,77 +626,69 @@ function recalcBudget() {
 
   const savings    = monthlyNet - totalExpenses;
   const savingsPct = monthlyNet ? savings / monthlyNet : 0;
-  const savingsEl  = document.getElementById('savings-amount');
-  savingsEl.textContent = fmt(savings);
-  savingsEl.className   = 'savings-amount' + (savings < 0 ? ' negative' : '');
+  const savEl      = document.getElementById('savings-amount');
+  savEl.textContent = fmt(savings);
+  savEl.className   = 'savings-amount' + (savings < 0 ? ' negative' : '');
 
-  const sPctEl = document.getElementById('savings-pct');
   const sScore = scoreSavings(savingsPct);
-  sPctEl.textContent = monthlyNet ? (savingsPct * 100).toFixed(1) + '%' : '—';
+  const sPctEl = document.getElementById('savings-pct');
+  sPctEl.textContent = monthlyNet ? (savingsPct*100).toFixed(1)+'%' : '—';
   sPctEl.className   = 's-val ' + sScore.cls;
-  document.getElementById('yearly-savings').textContent = monthlyNet ? fmtShort(savings * 12) : '—';
+  document.getElementById('yearly-savings').textContent = monthlyNet ? fmtShort(savings*12) : '—';
   const rEl = document.getElementById('savings-rating');
-  rEl.textContent = monthlyNet ? sScore.label : '—';
-  rEl.className   = 's-val ' + sScore.cls;
+  rEl.textContent = monthlyNet ? sScore.label : '—'; rEl.className = 's-val ' + sScore.cls;
   const gEl = document.getElementById('savings-grade');
-  gEl.textContent = monthlyNet ? sScore.grade + '/100' : '—';
-  gEl.className   = 's-val ' + sScore.cls;
+  gEl.textContent = monthlyNet ? sScore.grade+'/100' : '—'; gEl.className = 's-val ' + sScore.cls;
 
-  // Alloc buckets
+  // Alloc
   let totalAllocPct = 0;
   for (const b of ALLOC_BUCKETS) {
-    const pct = parseFloat(state.alloc[b.id]) || 0;
+    const pct    = parseFloat(state.alloc[b.id]) || 0;
     totalAllocPct += pct;
     const dollar = savings > 0 ? savings * (pct / 100) : 0;
-    const el = document.getElementById('alloc-dollar-' + b.id);
+    const el     = document.getElementById('alloc-dollar-' + b.id);
     if (el) el.textContent = fmt(dollar);
   }
   const warnEl = document.getElementById('alloc-warning');
-  if (totalAllocPct > 100) {
-    warnEl.textContent = `⚠ Total is ${totalAllocPct}% — over 100%`;
-  } else if (totalAllocPct === 100) {
-    warnEl.textContent = '✓ Fully allocated';
-    warnEl.style.color = 'var(--good)';
-  } else if (totalAllocPct > 0) {
-    warnEl.textContent = `${totalAllocPct}% allocated · ${100 - totalAllocPct}% unassigned`;
-    warnEl.style.color = 'var(--muted)';
-  } else {
-    warnEl.textContent = '';
-  }
-  if (totalAllocPct > 100) warnEl.style.color = 'var(--danger)';
+  if (totalAllocPct > 100)     { warnEl.textContent = `⚠ Total is ${totalAllocPct}% — over 100%`; warnEl.style.color = 'var(--danger)'; }
+  else if (totalAllocPct===100){ warnEl.textContent = '✓ Fully allocated'; warnEl.style.color = 'var(--good)'; }
+  else if (totalAllocPct > 0)  { warnEl.textContent = `${totalAllocPct}% allocated · ${100-totalAllocPct}% unassigned`; warnEl.style.color = 'var(--muted)'; }
+  else                          { warnEl.textContent = ''; }
 
   // Donut
-  const CIRC   = 2 * Math.PI * 62;
-  const expPct = monthlyNet ? Math.min(1, totalExpenses / monthlyNet) : 0;
-  const savPct = monthlyNet ? Math.max(0, Math.min(1 - expPct, savings / monthlyNet)) : 0;
+  const CIRC    = 2 * Math.PI * 62;
+  const expPct  = monthlyNet ? Math.min(1, totalExpenses/monthlyNet) : 0;
+  const savPct  = monthlyNet ? Math.max(0, Math.min(1-expPct, savings/monthlyNet)) : 0;
   const expDash = expPct * CIRC, savDash = savPct * CIRC;
-  document.getElementById('ring-expenses').setAttribute('stroke-dasharray', `${expDash} ${CIRC - expDash}`);
+  document.getElementById('ring-expenses').setAttribute('stroke-dasharray', `${expDash} ${CIRC-expDash}`);
   const savRing = document.getElementById('ring-savings');
-  savRing.setAttribute('stroke-dasharray', `${savDash} ${CIRC - savDash}`);
+  savRing.setAttribute('stroke-dasharray', `${savDash} ${CIRC-savDash}`);
   savRing.setAttribute('stroke-dashoffset', -expDash);
-  document.getElementById('ring-pct').textContent = monthlyNet ? Math.min(100, Math.round(expPct * 100)) + '%' : '0%';
+  document.getElementById('ring-pct').textContent = monthlyNet ? Math.min(100,Math.round(expPct*100))+'%' : '0%';
   document.getElementById('legend-expenses').textContent = fmt(totalExpenses);
   document.getElementById('legend-savings').textContent  = fmt(Math.max(0, savings));
-  document.getElementById('legend-unalloc').textContent  = fmt(Math.max(0, monthlyNet - totalExpenses));
+  document.getElementById('legend-unalloc').textContent  = fmt(Math.max(0, monthlyNet-totalExpenses));
 }
 
-// ─── TRACKER ─────────────────────────────────────────────────────────────────
-function buildCatSelect() {
-  const sel = document.getElementById('log-cat');
-  sel.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
-}
-
-function buildMonthFilter() {
-  const sel = document.getElementById('month-filter');
-  const now  = new Date();
+// ─── MONTH FILTER BUILDER (rolling 24 months so future months are covered) ───
+function buildMonthFilter(selectId) {
+  const sel = document.getElementById(selectId);
+  const now = new Date();
   const opts = [];
-  for (let i = 0; i < 12; i++) {
+  // Show 2 months ahead and 22 months back so the list auto-updates each month
+  for (let i = -2; i < 22; i++) {
     const d   = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     const lbl = d.toLocaleString('default', { month: 'long', year: 'numeric' });
     opts.push(`<option value="${val}"${i===0?' selected':''}>${lbl}</option>`);
   }
   sel.innerHTML = opts.join('');
+}
+
+// ─── EXPENSE LOG ─────────────────────────────────────────────────────────────
+function buildCatSelect() {
+  const sel = document.getElementById('log-cat');
+  sel.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
 }
 
 function logExpense() {
@@ -646,55 +702,48 @@ function logExpense() {
   saveState();
   document.getElementById('log-amount').value = '';
   document.getElementById('log-desc').value   = '';
-  document.getElementById('log-date').value   = new Date().toISOString().slice(0,10);
   const entryMonth = date.slice(0,7);
   const sel = document.getElementById('month-filter');
   if ([...sel.options].some(o => o.value === entryMonth)) sel.value = entryMonth;
   renderTracker();
 }
 
-function deleteEntry(id) {
+function deleteExpense(id) {
   state.logs = state.logs.filter(e => e.id !== id);
-  saveState();
-  renderTracker();
+  saveState(); renderTracker();
 }
 
 function clearMonthExpenses() {
   const month = document.getElementById('month-filter').value;
   if (!confirm(`Delete all expenses for ${month}?`)) return;
   state.logs = state.logs.filter(e => !e.date.startsWith(month));
-  saveState();
-  renderTracker();
+  saveState(); renderTracker();
 }
 
 function renderTracker() {
   const month     = document.getElementById('month-filter').value;
   const monthLogs = state.logs.filter(e => e.date.startsWith(month));
   const gross     = parseFloat(state.salary) || 0;
-  const { netAnnual } = calcTax(gross);
-  const monthlyNet = netAnnual / 12;
+  const monthlyNet = calcTax(gross).netAnnual / 12;
 
   const spentMap = {};
   let totalSpent = 0;
-  for (const log of monthLogs) {
-    spentMap[log.catId] = (spentMap[log.catId] || 0) + log.amount;
-    totalSpent += log.amount;
-  }
+  for (const log of monthLogs) { spentMap[log.catId] = (spentMap[log.catId]||0) + log.amount; totalSpent += log.amount; }
 
   let totalBudget = 0;
   for (const cat of CATEGORIES) totalBudget += parseFloat(state.expenses[cat.id]) || 0;
   const remaining = totalBudget - totalSpent;
 
-  document.getElementById('banner-spent').textContent   = fmt(totalSpent);
-  document.getElementById('banner-budget').textContent  = fmt(totalBudget);
+  document.getElementById('banner-spent').textContent  = fmt(totalSpent);
+  document.getElementById('banner-budget').textContent = fmt(totalBudget);
   const remEl = document.getElementById('banner-remaining');
-  remEl.textContent  = fmt(remaining);
-  remEl.style.color  = remaining < 0 ? 'var(--danger)' : remaining < totalBudget * 0.1 ? 'var(--caution)' : 'var(--good)';
+  remEl.textContent = fmt(remaining);
+  remEl.style.color = remaining < 0 ? 'var(--danger)' : remaining < totalBudget*0.1 ? 'var(--caution)' : 'var(--good)';
   const statusEl = document.getElementById('banner-status');
-  if (!totalBudget) { statusEl.textContent = 'Set a budget first'; statusEl.style.color = 'var(--muted)'; }
-  else if (remaining < 0)               { statusEl.textContent = '✗ Over budget';  statusEl.style.color = 'var(--danger)'; }
-  else if (remaining < totalBudget*0.1) { statusEl.textContent = '⚠ Nearly there'; statusEl.style.color = 'var(--caution)'; }
-  else                                  { statusEl.textContent = '✓ On track';      statusEl.style.color = 'var(--good)'; }
+  if (!totalBudget)                  { statusEl.textContent = 'Set a budget first';  statusEl.style.color='var(--muted)'; }
+  else if (remaining < 0)            { statusEl.textContent = '✗ Over budget';       statusEl.style.color='var(--danger)'; }
+  else if (remaining<totalBudget*0.1){ statusEl.textContent = '⚠ Nearly there';      statusEl.style.color='var(--caution)'; }
+  else                               { statusEl.textContent = '✓ On track';           statusEl.style.color='var(--good)'; }
 
   const summary = document.getElementById('tracker-summary');
   summary.innerHTML = '';
@@ -703,11 +752,20 @@ function renderTracker() {
     const spent  = spentMap[cat.id] || 0;
     if (!budget && !spent) continue;
     const rem  = budget - spent;
-    const pct  = budget ? Math.min(100, (spent / budget) * 100) : 100;
-    let badgeCls = 'good', badgeLabel = '✓ Under', barColor = 'var(--good)', remCls = 'under';
-    if (!budget)      { badgeCls = ''; badgeLabel = 'No budget'; barColor = 'var(--muted)'; remCls = ''; }
-    else if (spent > budget) { badgeCls = 'danger'; badgeLabel = '✗ Over';  barColor = 'var(--danger)';  remCls = 'over'; }
-    else if (pct > 80)       { badgeCls = 'caution'; badgeLabel = '⚠ Close'; barColor = 'var(--caution)'; remCls = 'warn'; }
+    const pct  = budget ? Math.min(100, (spent/budget)*100) : 100;
+    let badgeCls, badgeLabel, barColor, remCls;
+    if (!budget)         { badgeCls='';       badgeLabel='No budget'; barColor='var(--muted)';   remCls=''; }
+    else if (spent>budget){ badgeCls='danger'; badgeLabel='✗ Over';   barColor='var(--danger)'; remCls='over'; }
+    else if (pct>80)     { badgeCls='caution';badgeLabel='⚠ Close';   barColor='var(--caution)';remCls='warn'; }
+    else                 { badgeCls='good';   badgeLabel='✓ Under';   barColor='var(--good)';   remCls='under'; }
+
+    // Variable categories: show "under limit" framing
+    const remText = !budget
+      ? fmt(spent)+' spent (no budget set)'
+      : cat.variable
+        ? (rem>=0 ? fmt(rem)+' under limit' : fmt(Math.abs(rem))+' over limit')
+        : (rem>=0 ? fmt(rem)+' remaining'   : fmt(Math.abs(rem))+' over budget');
+
     const card = document.createElement('div');
     card.className = 'tracker-cat-card';
     card.innerHTML = `
@@ -719,9 +777,7 @@ function renderTracker() {
         <span class="tcc-spent">${fmt(spent)}</span>
         <span class="tcc-budget">of ${budget ? fmt(budget) : '—'}</span>
       </div>
-      <div class="tcc-remaining ${remCls}">
-        ${budget ? (rem >= 0 ? fmt(rem) + ' remaining' : fmt(Math.abs(rem)) + ' over budget') : fmt(spent) + ' spent (no budget set)'}
-      </div>
+      <div class="tcc-remaining ${remCls}">${remText}</div>
       <div class="tcc-bar"><div class="tcc-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
     `;
     summary.appendChild(card);
@@ -731,8 +787,8 @@ function renderTracker() {
   if (!monthLogs.length) { list.innerHTML = '<div class="log-empty">No expenses logged for this month yet.</div>'; return; }
   list.innerHTML = '';
   for (const entry of monthLogs) {
-    const cat     = CATEGORIES.find(c => c.id === entry.catId) || { icon: '📦', name: 'Other' };
-    const dateStr = new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const cat     = CATEGORIES.find(c=>c.id===entry.catId) || { icon:'📦', name:'Other' };
+    const dateStr = new Date(entry.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
     const row     = document.createElement('div');
     row.className = 'log-entry';
     row.innerHTML = `
@@ -741,8 +797,100 @@ function renderTracker() {
         <div class="log-entry-desc">${entry.desc}</div>
         <div class="log-entry-meta">${cat.name} · ${dateStr}</div>
       </div>
-      <div class="log-entry-amount">-${fmt(entry.amount)}</div>
-      <button class="log-entry-delete" onclick="deleteEntry(${entry.id})" title="Delete">✕</button>
+      <div class="log-entry-amount expense">-${fmt(entry.amount)}</div>
+      <button class="log-entry-delete" onclick="deleteExpense(${entry.id})">✕</button>
+    `;
+    list.appendChild(row);
+  }
+}
+
+// ─── SAVINGS LOG ─────────────────────────────────────────────────────────────
+function buildSLCatSelect() {
+  const sel = document.getElementById('sl-cat');
+  sel.innerHTML = ALLOC_BUCKETS.map(b => `<option value="${b.id}">${b.icon} ${b.name}</option>`).join('');
+}
+
+function logSaving() {
+  const amount = parseFloat(document.getElementById('sl-amount').value);
+  const desc   = document.getElementById('sl-desc').value.trim();
+  const catId  = document.getElementById('sl-cat').value;
+  const date   = document.getElementById('sl-date').value;
+  if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  if (!date) { alert('Please select a date.'); return; }
+  state.savingsLogs.unshift({ id: Date.now(), amount, desc: desc || 'Savings entry', catId, date });
+  saveState();
+  document.getElementById('sl-amount').value = '';
+  document.getElementById('sl-desc').value   = '';
+  const entryMonth = date.slice(0,7);
+  const sel = document.getElementById('sl-month-filter');
+  if ([...sel.options].some(o => o.value === entryMonth)) sel.value = entryMonth;
+  renderSavingsLog();
+}
+
+function deleteSaving(id) {
+  state.savingsLogs = state.savingsLogs.filter(e => e.id !== id);
+  saveState(); renderSavingsLog();
+}
+
+function clearMonthSavings() {
+  const month = document.getElementById('sl-month-filter').value;
+  if (!confirm(`Delete all savings entries for ${month}?`)) return;
+  state.savingsLogs = state.savingsLogs.filter(e => !e.date.startsWith(month));
+  saveState(); renderSavingsLog();
+}
+
+function renderSavingsLog() {
+  const month      = document.getElementById('sl-month-filter').value;
+  const year       = month.slice(0,4);
+  const monthLogs  = state.savingsLogs.filter(e => e.date.startsWith(month));
+  const yearLogs   = state.savingsLogs.filter(e => e.date.startsWith(year));
+  const allLogs    = state.savingsLogs;
+
+  const monthTotal = monthLogs.reduce((s,e)=>s+e.amount, 0);
+  const yearTotal  = yearLogs.reduce((s,e)=>s+e.amount, 0);
+  const allTotal   = allLogs.reduce((s,e)=>s+e.amount, 0);
+
+  document.getElementById('sl-banner-month').textContent = fmt(monthTotal);
+  document.getElementById('sl-banner-year').textContent  = fmt(yearTotal);
+  document.getElementById('sl-banner-total').textContent = fmt(allTotal);
+
+  // Bucket totals for selected month
+  const bucketSummary = document.getElementById('sl-bucket-summary');
+  bucketSummary.innerHTML = '';
+  for (const b of ALLOC_BUCKETS) {
+    const entries  = monthLogs.filter(e => e.catId === b.id);
+    const total    = entries.reduce((s,e) => s+e.amount, 0);
+    const allTime  = allLogs.filter(e=>e.catId===b.id).reduce((s,e)=>s+e.amount,0);
+    const card     = document.createElement('div');
+    card.className = 'sl-bucket-card';
+    card.innerHTML = `
+      <div class="sl-bucket-top">
+        <span class="sl-bucket-icon">${b.icon}</span>
+        <span class="sl-bucket-name">${b.name}</span>
+      </div>
+      <div class="sl-bucket-total">${fmt(total)}</div>
+      <div class="sl-bucket-count">this month · ${fmt(allTime)} all-time</div>
+    `;
+    bucketSummary.appendChild(card);
+  }
+
+  // Log list
+  const list = document.getElementById('sl-log-list');
+  if (!monthLogs.length) { list.innerHTML = '<div class="log-empty">No savings entries for this month yet.</div>'; return; }
+  list.innerHTML = '';
+  for (const entry of monthLogs) {
+    const bucket  = ALLOC_BUCKETS.find(b=>b.id===entry.catId) || { icon:'💰', name:'Savings' };
+    const dateStr = new Date(entry.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const row     = document.createElement('div');
+    row.className = 'log-entry';
+    row.innerHTML = `
+      <div class="log-entry-icon">${bucket.icon}</div>
+      <div class="log-entry-info">
+        <div class="log-entry-desc">${entry.desc}</div>
+        <div class="log-entry-meta">${bucket.name} · ${dateStr}</div>
+      </div>
+      <div class="log-entry-amount saving">+${fmt(entry.amount)}</div>
+      <button class="log-entry-delete" onclick="deleteSaving(${entry.id})">✕</button>
     `;
     list.appendChild(row);
   }
@@ -753,10 +901,8 @@ function exportData() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `budget-backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = `budget-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(url);
 }
 
 function importData(event) {
@@ -766,26 +912,18 @@ function importData(event) {
   reader.onload = e => {
     try {
       const parsed = JSON.parse(e.target.result);
-      if (typeof parsed.expenses !== 'object') throw new Error('Invalid format');
+      if (typeof parsed.expenses !== 'object') throw new Error('Invalid');
       Object.assign(state, parsed);
-      if (!state.alloc) state.alloc = {};
-      if (!state.logs)  state.logs  = [];
+      if (!state.alloc)       state.alloc       = {};
+      if (!state.logs)        state.logs        = [];
+      if (!state.savingsLogs) state.savingsLogs = [];
       saveState();
       document.getElementById('salary').value = state.salary || '';
-      for (const cat of CATEGORIES) {
-        const el = document.getElementById('input-' + cat.id);
-        if (el) el.value = state.expenses[cat.id] || '';
-      }
-      for (const b of ALLOC_BUCKETS) {
-        const el = document.getElementById('alloc-' + b.id);
-        if (el) el.value = state.alloc[b.id] || '';
-      }
-      recalcBudget();
-      renderTracker();
+      for (const cat of CATEGORIES) { const el=document.getElementById('input-'+cat.id); if(el) el.value=state.expenses[cat.id]||''; }
+      for (const b of ALLOC_BUCKETS) { const el=document.getElementById('alloc-'+b.id); if(el) el.value=state.alloc[b.id]||''; }
+      recalcBudget(); renderTracker(); renderSavingsLog();
       alert('✅ Budget data imported successfully!');
-    } catch(err) {
-      alert('❌ Could not read file. Make sure it is a valid budget backup.');
-    }
+    } catch { alert('❌ Could not read file. Make sure it is a valid budget backup.'); }
     event.target.value = '';
   };
   reader.readAsText(file);
@@ -796,29 +934,20 @@ loadState();
 buildGrid();
 buildAllocGrid();
 buildCatSelect();
-buildMonthFilter();
+buildSLCatSelect();
+buildMonthFilter('month-filter');
+buildMonthFilter('sl-month-filter');
 
-document.getElementById('log-date').value = new Date().toISOString().slice(0,10);
+const today = new Date().toISOString().slice(0,10);
+document.getElementById('log-date').value = today;
+document.getElementById('sl-date').value  = today;
 
 const salaryInput = document.getElementById('salary');
 salaryInput.value = state.salary || '';
-salaryInput.addEventListener('input', e => {
-  state.salary = e.target.value;
-  saveState();
-  recalcBudget();
-});
+salaryInput.addEventListener('input', e => { state.salary = e.target.value; saveState(); recalcBudget(); });
 
-// Restore expense inputs from state
-for (const cat of CATEGORIES) {
-  const el = document.getElementById('input-' + cat.id);
-  if (el && state.expenses[cat.id]) el.value = state.expenses[cat.id];
-}
-
-// Restore alloc inputs from state
-for (const b of ALLOC_BUCKETS) {
-  const el = document.getElementById('alloc-' + b.id);
-  if (el && state.alloc[b.id]) el.value = state.alloc[b.id];
-}
+for (const cat of CATEGORIES) { const el=document.getElementById('input-'+cat.id); if(el && state.expenses[cat.id]) el.value=state.expenses[cat.id]; }
+for (const b of ALLOC_BUCKETS) { const el=document.getElementById('alloc-'+b.id); if(el && state.alloc[b.id]) el.value=state.alloc[b.id]; }
 
 recalcBudget();
 </script>
