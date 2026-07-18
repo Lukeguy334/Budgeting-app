@@ -549,7 +549,7 @@ const ALLOC_BUCKETS=[
   {id:'401k',        name:'401(k)',          icon:'🏦'},
   {id:'home',        name:'Saving for Home', icon:'🏡'},
   {id:'investments', name:'Investments',     icon:'📈'},
-  {id:'emergency',   name:'Emergency Fund',  icon:'🛡️'},
+  {id:'emergency',   name:'General Savings / General Savings / Emergency Fund',  icon:'🛡️'},
 ];
 const LOAN_ICONS={mortgage:'🏠',auto:'🚗',personal:'💳',student:'🎓',other:'📄'};
 
@@ -736,10 +736,25 @@ function recalcBudget(){
     if(de)de.textContent=fmt(d);
     if(ip){if(mNet&&p)ip.innerHTML=`<span>${(d/mNet*100).toFixed(1)}%</span> of take-home`;else ip.textContent='— of take-home';}
   }
+  // Unallocated savings auto-route to General Savings / Emergency Fund
+  const unallocPct=Math.max(0,100-tap);
+  const unallocDollar=sav>0?sav*(unallocPct/100):0;
+  const emergEl=document.getElementById('alloc-dollar-emergency');
+  const emergPctEl=document.getElementById('alloc-income-pct-emergency');
+  const emergInput=document.getElementById('alloc-emergency');
+  if(emergEl&&emergInput){
+    const manualPct=parseFloat(state.alloc['emergency'])||0;
+    const manualDollar=sav>0?sav*(manualPct/100):0;
+    const autoExtra=tap<100?unallocDollar-manualDollar:0;
+    const totalEmerg=manualDollar+(autoExtra>0?autoExtra:0);
+    emergEl.textContent=fmt(totalEmerg);
+    if(emergPctEl&&mNet) emergPctEl.innerHTML=`<span>${(totalEmerg/mNet*100).toFixed(1)}%</span> of take-home${autoExtra>0?' (incl. unallocated)':''}`;
+  }
   const wEl=document.getElementById('alloc-warning');
   if(tap>100){wEl.textContent=`⚠ Total is ${tap}% — over 100%`;wEl.style.color='var(--danger)';}
   else if(tap===100){wEl.textContent='✓ Fully allocated';wEl.style.color='var(--good)';}
-  else if(tap>0){wEl.textContent=`${tap}% allocated · ${100-tap}% unassigned`;wEl.style.color='var(--muted)';}
+  else if(tap>0){wEl.textContent=`${tap}% allocated · ${100-tap}% unassigned → auto to General Savings`;wEl.style.color='var(--muted)';}
+  else if(sav>0){wEl.textContent='All unallocated savings → General Savings / Emergency Fund';wEl.style.color='var(--muted)';}
   else wEl.textContent='';
   const CIRC=2*Math.PI*54;
   const ep=mNet?Math.min(1,totalExp/mNet):0,sp2=mNet?Math.max(0,Math.min(1-ep,sav/mNet)):0;
@@ -984,11 +999,13 @@ function calcPTOAccrued(){
   const now=new Date();
   const start=new Date(PTO_START_DATE+'T00:00:00');
   if(now<start) return 0;
-  // Accrual is 10 hrs per completed month since start date.
-  // A "completed month" means we've passed the same day-of-month as the start date.
-  let months=( now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth());
-  // If we haven't yet hit the day-of-month anniversary this month, subtract one
-  if(now.getDate()<start.getDate()) months=Math.max(0,months-1);
+  // PTO resets each Jan 1. Count accrual from the later of: Jan 1 this year OR start date.
+  const yearStart=new Date(now.getFullYear(),0,1);
+  const accrualFrom=start>yearStart?start:yearStart;
+  // Count completed months since accrualFrom
+  let months=(now.getFullYear()-accrualFrom.getFullYear())*12+(now.getMonth()-accrualFrom.getMonth());
+  // Only count a month as complete if we've passed the same day-of-month as accrualFrom
+  if(now.getDate()<accrualFrom.getDate()) months=Math.max(0,months-1);
   return Math.min(PTO_MAX_ANNUAL, months*PTO_ACCRUAL_PER_MONTH);
 }
 
