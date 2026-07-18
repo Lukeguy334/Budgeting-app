@@ -549,12 +549,12 @@ const ALLOC_BUCKETS=[
   {id:'401k',        name:'401(k)',          icon:'🏦'},
   {id:'home',        name:'Saving for Home', icon:'🏡'},
   {id:'investments', name:'Investments',     icon:'📈'},
-  {id:'emergency',   name:'General Savings / General Savings / Emergency Fund',  icon:'🛡️'},
+  {id:'emergency',   name:'General Savings / Emergency Fund',  icon:'🛡️'},
 ];
 const LOAN_ICONS={mortgage:'🏠',auto:'🚗',personal:'💳',student:'🎓',other:'📄'};
 
 // PTO constants
-const PTO_START_DATE='2025-07-07'; // Monday July 7, 2025 — first day
+const PTO_START_DATE='2026-07-06'; // Sunday July 6, 2026 — first day (first year accrual begins here)
 const PTO_ACCRUAL_PER_MONTH=10;
 const PTO_MAX_ANNUAL=120;
 const PTO_ROLLOVER=40;
@@ -999,12 +999,17 @@ function calcPTOAccrued(){
   const now=new Date();
   const start=new Date(PTO_START_DATE+'T00:00:00');
   if(now<start) return 0;
-  // PTO resets each Jan 1. Count accrual from the later of: Jan 1 this year OR start date.
-  const yearStart=new Date(now.getFullYear(),0,1);
-  const accrualFrom=start>yearStart?start:yearStart;
+  // First year (start year): accrue from start date.
+  // Subsequent years: accrue from Jan 1 of that year.
+  let accrualFrom;
+  if(now.getFullYear()===start.getFullYear()){
+    accrualFrom=start;
+  } else {
+    accrualFrom=new Date(now.getFullYear(),0,1);
+  }
   // Count completed months since accrualFrom
   let months=(now.getFullYear()-accrualFrom.getFullYear())*12+(now.getMonth()-accrualFrom.getMonth());
-  // Only count a month as complete if we've passed the same day-of-month as accrualFrom
+  // Only count a month as complete once we've passed the same day-of-month as accrualFrom
   if(now.getDate()<accrualFrom.getDate()) months=Math.max(0,months-1);
   return Math.min(PTO_MAX_ANNUAL, months*PTO_ACCRUAL_PER_MONTH);
 }
