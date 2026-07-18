@@ -554,7 +554,7 @@ const ALLOC_BUCKETS=[
 const LOAN_ICONS={mortgage:'🏠',auto:'🚗',personal:'💳',student:'🎓',other:'📄'};
 
 // PTO constants
-const PTO_START_DATE='2025-07-04'; // ~2 weeks before July 18
+const PTO_START_DATE='2025-07-07'; // Monday July 7, 2025 — first day
 const PTO_ACCRUAL_PER_MONTH=10;
 const PTO_MAX_ANNUAL=120;
 const PTO_ROLLOVER=40;
@@ -982,20 +982,14 @@ function renderLoans(){
 // ─── PTO ─────────────────────────────────────────────────────────────────────
 function calcPTOAccrued(){
   const now=new Date();
-  const start=new Date(PTO_START_DATE);
-  // months since start (floored)
-  const months=Math.max(0,(now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth()));
-  // within current year
-  const yearStart=new Date(now.getFullYear(),0,1);
-  const monthsSinceYearStart=Math.max(0,(now.getFullYear()-yearStart.getFullYear())*12+(now.getMonth()-yearStart.getMonth()));
-  // accrued this year, capped at max
-  let accrued=Math.min(PTO_MAX_ANNUAL, monthsSinceYearStart*PTO_ACCRUAL_PER_MONTH);
-  // if start date is in current year, only count from start
-  if(start>=yearStart){
-    const monthsThisYear=Math.max(0,(now.getMonth()-start.getMonth())+(now.getFullYear()-start.getFullYear())*12);
-    accrued=Math.min(PTO_MAX_ANNUAL, monthsThisYear*PTO_ACCRUAL_PER_MONTH);
-  }
-  return accrued;
+  const start=new Date(PTO_START_DATE+'T00:00:00');
+  if(now<start) return 0;
+  // Accrual is 10 hrs per completed month since start date.
+  // A "completed month" means we've passed the same day-of-month as the start date.
+  let months=( now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth());
+  // If we haven't yet hit the day-of-month anniversary this month, subtract one
+  if(now.getDate()<start.getDate()) months=Math.max(0,months-1);
+  return Math.min(PTO_MAX_ANNUAL, months*PTO_ACCRUAL_PER_MONTH);
 }
 
 function calcPTOBalance(){
