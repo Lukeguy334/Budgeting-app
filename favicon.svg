@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <clipPath id="hc">
+      <polygon points="6,50 28,12 72,12 94,50 72,88 28,88"/>
+    </clipPath>
+  </defs>
+  <!-- Dark fill so it reads well on light browser tabs -->
+  <polygon points="6,50 28,12 72,12 94,50 72,88 28,88"
+           fill="#0A1410" stroke="#00C896" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Chart line and dots — clipped to hexagon interior -->
+  <g clip-path="url(#hc)">
+    <polyline points="22,73 38,52 52,63 77,33"
+              fill="none" stroke="#00C896" stroke-width="4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="22" cy="73" r="5" fill="#00C896"/>
+    <circle cx="38" cy="52" r="5" fill="#00C896"/>
+    <circle cx="52" cy="63" r="5" fill="#00C896"/>
+    <circle cx="77" cy="33" r="5" fill="#00C896"/>
+    <polyline points="73,29 77,33 73,37"
+              fill="none" stroke="#00C896" stroke-width="4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
