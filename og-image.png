@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Clip chart to hexagon interior -->
+    <clipPath id="hc">
+      <polygon points="6,50 28,12 72,12 94,50 72,88 28,88"
+               transform="translate(450,90) scale(3)"/>
+    </clipPath>
+    <linearGradient id="topglow" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#00C896" stop-opacity="0.09"/>
+      <stop offset="100%" stop-color="#00C896" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0D0F14"/>
+
+  <!-- Subtle grid -->
+  <line x1="0" y1="315" x2="1200" y2="315" stroke="#1C2130" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="#1C2130" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="#1C2130" stroke-width="1"/>
+
+  <!-- Border -->
+  <rect x="2" y="2" width="1196" height="626" rx="20"
+        fill="none" stroke="#232A3A" stroke-width="3"/>
+
+  <!-- Glow behind logo -->
+  <ellipse cx="600" cy="246" rx="260" ry="160" fill="url(#topglow)"/>
+
+  <!-- Hexagon (scale 3 → 264×228px, centered at x=600 y=246) -->
+  <!-- translate(450,90): left=468, right=732, top=126, bottom=354 → center (600,240) -->
+  <g transform="translate(450,90) scale(3)">
+    <polygon points="6,50 28,12 72,12 94,50 72,88 28,88"
+             fill="#0A1410" stroke="#00C896" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Chart line + dots clipped inside hex -->
+  <g clip-path="url(#hc)">
+    <g transform="translate(450,90) scale(3)">
+      <polyline points="22,73 38,52 52,63 77,33"
+                fill="none" stroke="#00C896" stroke-width="4"
+                stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="22" cy="73" r="5" fill="#00C896"/>
+      <circle cx="38" cy="52" r="5" fill="#00C896"/>
+      <circle cx="52" cy="63" r="5" fill="#00C896"/>
+      <circle cx="77" cy="33" r="5" fill="#00C896"/>
+      <polyline points="73,29 77,33 73,37"
+                fill="none" stroke="#00C896" stroke-width="4"
+                stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+
+  <!-- Brand name — sits below hex (hex bottom ≈ y354, text baseline at y430) -->
+  <text x="600" y="430"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="76" font-weight="700" letter-spacing="-2"
+        text-anchor="middle" fill="#F0EDE6">Net<tspan fill="#00C896">Worth</tspan></text>
+
+  <!-- Tagline -->
+  <text x="600" y="486"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="24" font-weight="400" letter-spacing="0.3"
+        text-anchor="middle" fill="#4A5568">Know your number. Own your future.</text>
+
+  <!-- Accent line -->
+  <rect x="564" y="525" width="72" height="3" rx="1.5" fill="#00C896" opacity="0.45"/>
+
+  <!-- URL -->
+  <text x="600" y="566"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="18" font-weight="500" letter-spacing="4"
+        text-anchor="middle" fill="#3A4558">NETWORTH.INK</text>
+</svg>
