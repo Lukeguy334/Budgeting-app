@@ -613,7 +613,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
       <div class="pay-feature"><span class="pay-check">✓</span>PTO tracker — accrual, rollover & expiration alerts</div>
       <div class="pay-feature"><span class="pay-check">✓</span>Benefits plan deduction tracking</div>
     </div>
-    <button class="btn-primary" onclick="startTrial()" style="max-width:640px;">Start Free Trial →</button>
+    <button class="btn-primary" id="pay-trial-btn" onclick="startTrial()" style="max-width:640px;">Start Free Trial →</button>
     <div class="pay-disclaimer">A payment method is required to start your trial. You will not be charged until the 3-day trial ends. Cancel anytime before then at no cost.</div>
   </div>
 </div>
@@ -1316,14 +1316,29 @@ function selectPlan(plan){
   document.getElementById('pay-card-monthly').classList.toggle('selected',plan==='monthly');
   document.getElementById('pay-card-annual').classList.toggle('selected',plan==='annual');
 }
-function startTrial(){
-  // TODO: Replace with real Stripe Checkout
-  // 1. Create a Stripe checkout session via your serverless function (Vercel API route)
-  // 2. Redirect to session.url
-  // 3. On success, webhook updates subscription status in Supabase
-  const end=new Date();end.setDate(end.getDate()+3);
-  user.subscription={status:'trial',plan:selectedPlan,trialEnd:end.toISOString()};
-  saveUser();initApp();
+async function startTrial(){
+  console.log('startTrial called, plan:', selectedPlan, 'user:', user?.email);
+  const btn=document.getElementById('pay-trial-btn');
+  const orig='Start Free Trial →';
+  if(btn){btn.textContent='Redirecting to checkout…';btn.disabled=true;}
+  localStorage.setItem('nw_pending_plan',selectedPlan);
+  try{
+    console.log('Fetching /api/create-checkout-session...');
+    const res=await fetch('/api/create-checkout-session',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plan:selectedPlan,email:user?user.email:''})
+    });
+    console.log('Response status:', res.status);
+    const data=await res.json();
+    console.log('Response:', data);
+    if(data.error)throw new Error(data.error);
+    window.location.href=data.url;
+  }catch(err){
+    console.error('Stripe error:',err);
+    if(btn){btn.textContent=orig;btn.disabled=false;}
+    alert('Payment error: '+err.message);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1998,11 +2013,25 @@ function importData(event){
 // BOOT
 // ═══════════════════════════════════════════════════════════
 
-user=getCurrentUser();
-if(!user)showScreen('auth');
-else if(!user.profile)startOnboarding();
-else if(user.subscription.status==='none')showScreen('payment');
-else initApp();
+// ── Handle return from Stripe Checkout ──
+const _sp=new URLSearchParams(window.location.search);
+if(_sp.get('payment')==='success'){
+  user=getCurrentUser();
+  if(user){
+    const _plan=localStorage.getItem('nw_pending_plan')||'monthly';
+    const _end=new Date();_end.setDate(_end.getDate()+3);
+    user.subscription={status:'trial',plan:_plan,trialEnd:_end.toISOString()};
+    saveUser();localStorage.removeItem('nw_pending_plan');
+    window.history.replaceState({},'','/'); // clean URL
+    initApp();
+  }else{showScreen('auth');}
+}else{
+  user=getCurrentUser();
+  if(!user)showScreen('auth');
+  else if(!user.profile)startOnboarding();
+  else if(user.subscription.status==='none')showScreen('payment');
+  else initApp();
+}
 </script>
 </body>
 </html>
