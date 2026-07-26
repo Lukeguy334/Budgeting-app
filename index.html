@@ -1413,20 +1413,22 @@ function obNext(){
     // Warn if no savings goals selected
     const totalGoals=obData.selectedGoals.length+(obData.customGoals||[]).filter(Boolean).length;
     if(totalGoals===0){
-      if(!confirm('⚠️ You haven't selected any savings goals — your savings allocation section will be empty. Go back to add some?')){}
-      else{return;}// stay on step
+      if(!confirm("⚠️ No savings goals selected — your savings section will be empty. Go back to add some?")){
+        // user pressed Cancel = go back
+        return;
+      }
     }
   }else if(obStep===3){
     // Warn if no budget categories selected
     const totalCats=obData.selectedCats.length+(obData.selectedPetCats||[]).length+(obData.selectedKidCats||[]).length+(obData.customCats||[]).filter(Boolean).length;
     if(totalCats===0){
-      alert('⚠️ You haven't selected any budget categories — your Budget tab will be empty. Please select at least one category before continuing.');
+      alert("⚠️ You haven't selected any budget categories — your Budget tab will be empty. Please select at least one category before continuing.");
       return;
     }
-    if(obData.hasPets===null){alert('Please answer the pets question before continuing.');return;}
-    if(obData.hasKids===null){alert('Please answer the children question before continuing.');return;}
+    if(obData.hasPets===null){alert("Please answer the pets question before continuing.");return;}
+    if(obData.hasKids===null){alert("Please answer the children question before continuing.");return;}
   }else if(obStep===4){
-    if(obData.hasPTO===null){alert('Please select whether your job offers PTO before continuing.');return;}
+    if(obData.hasPTO===null){alert("Please select whether your job offers PTO before continuing.");return;}
     if(obData.hasPTO){
       const type=obData.ptoConfig.type||'accruing';
       if(type==='accruing'){
@@ -1438,7 +1440,7 @@ function obNext(){
       }
     }
   }else if(obStep===5){
-    if(obData.hasBenefits===null){alert('Please select whether your job offers benefits before continuing.');return;}
+    if(obData.hasBenefits===null){alert("Please select whether your job offers benefits before continuing.");return;}
   }
   if(obStep<OB_STEPS.length-1){obStep++;renderObStep();}
   else{user.profile=obData;saveUser();runLoadingScreen();}
