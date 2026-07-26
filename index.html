@@ -22,6 +22,7 @@
 <meta name="twitter:description" content="Budget smarter. Track savings goals, calculate your real take-home pay, manage PTO, and more.">
 <meta name="twitter:image" content="https://networth.ink/og-image.png">
 <meta name="theme-color" content="#00C896">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -527,28 +528,59 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
     <!-- Step 4: PTO -->
     <div class="ob-step" id="ob-step-4">
       <div class="ob-title">Does your job offer PTO?</div>
-      <div class="ob-subtitle">If yes, we'll add a PTO tracker tab so you can monitor accrual, usage, and rollover. You can always adjust this in Settings.</div>
+      <div class="ob-subtitle">If yes, we'll add a PTO tracker tab. You can always adjust this in Settings. <strong style="color:var(--danger)">A selection is required to continue.</strong></div>
       <div class="yesno-group" style="margin-bottom:0;">
         <button class="yesno-btn" id="pto-no-btn" onclick="setPTO(false)">No PTO</button>
         <button class="yesno-btn" id="pto-yes-btn" onclick="setPTO(true)">Yes, I have PTO</button>
       </div>
       <div class="conditional-section" id="pto-details" style="margin-top:14px;">
-        <div class="ob-row">
-          <div class="ob-field"><label>PTO start / hire date</label><input type="date" id="ob-pto-start"></div>
-          <div class="ob-field"><label>Hours accrued per month</label><input type="number" id="ob-pto-accrual" placeholder="10" min="0" step="0.5"></div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">PTO Type</div>
+        <div class="goal-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px;">
+          <div class="check-item" id="pto-type-accruing" onclick="setPTOType('accruing')">
+            <span class="check-icon">📅</span><div class="check-box"></div>
+            <div><div class="check-label">Accruing</div><div style="font-size:10px;color:var(--muted)">Builds monthly</div></div>
+          </div>
+          <div class="check-item" id="pto-type-frontloaded" onclick="setPTOType('frontloaded')">
+            <span class="check-icon">🎁</span><div class="check-box"></div>
+            <div><div class="check-label">Frontloaded</div><div style="font-size:10px;color:var(--muted)">All at year start</div></div>
+          </div>
+          <div class="check-item" id="pto-type-unlimited" onclick="setPTOType('unlimited')">
+            <span class="check-icon">♾️</span><div class="check-box"></div>
+            <div><div class="check-label">Unlimited</div><div style="font-size:10px;color:var(--muted)">No limit</div></div>
+          </div>
         </div>
-        <div class="ob-row">
-          <div class="ob-field"><label>Annual PTO cap (hours)</label><input type="number" id="ob-pto-max" placeholder="120" min="0"></div>
-          <div class="ob-field"><label>Rollover hours (0 = none)</label><input type="number" id="ob-pto-rollover" placeholder="40" min="0"></div>
+        <!-- Accruing fields -->
+        <div id="pto-accruing-fields">
+          <div class="ob-row">
+            <div class="ob-field"><label>Start / hire date</label><input type="date" id="ob-pto-start"></div>
+            <div class="ob-field"><label>Hours accrued per month</label><input type="number" id="ob-pto-accrual" placeholder="10" min="0" step="0.5"></div>
+          </div>
+          <div class="ob-row">
+            <div class="ob-field"><label>Annual PTO cap (hours)</label><input type="number" id="ob-pto-max" placeholder="120" min="0"></div>
+            <div class="ob-field"><label>Rollover hours (0 = none)</label><input type="number" id="ob-pto-rollover" placeholder="40" min="0"></div>
+          </div>
+          <div class="ob-field"><label>Protected / sick hours per year (0 if none)</label><input type="number" id="ob-pto-protected" placeholder="40" min="0"></div>
         </div>
-        <div class="ob-field"><label>Protected / sick time (hrs / year, 0 if none)</label><input type="number" id="ob-pto-protected" placeholder="40" min="0"></div>
+        <!-- Frontloaded fields -->
+        <div id="pto-frontloaded-fields" style="display:none;">
+          <div class="ob-row">
+            <div class="ob-field"><label>Total hours per year</label><input type="number" id="ob-pto-frontloaded" placeholder="120" min="0"></div>
+            <div class="ob-field"><label>Start / hire date</label><input type="date" id="ob-pto-start-fl"></div>
+          </div>
+          <div class="ob-field"><label>Protected / sick hours per year (0 if none)</label><input type="number" id="ob-pto-protected-fl" placeholder="40" min="0"></div>
+        </div>
+        <!-- Unlimited fields -->
+        <div id="pto-unlimited-fields" style="display:none;">
+          <div class="ob-field"><label>Protected / sick hours per year (0 if none)</label><input type="number" id="ob-pto-protected-ul" placeholder="40" min="0"></div>
+          <div style="background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:10px;padding:11px;font-size:12px;color:rgba(0,200,150,.8);margin-top:8px;">♾️ No balance tracking needed — we'll just log your time off requests.</div>
+        </div>
       </div>
     </div>
 
     <!-- Step 5: Benefits -->
     <div class="ob-step" id="ob-step-5">
       <div class="ob-title">Does your job offer benefits?</div>
-      <div class="ob-subtitle">If yes, we'll add a Benefits Plan section to your budget so you can track paycheck deductions. Only the benefits you select will appear.</div>
+      <div class="ob-subtitle">If yes, we'll add a Benefits Plan section to your budget. Only the benefits you select will appear. <strong style="color:var(--danger)">A selection is required to continue.</strong></div>
       <div class="yesno-group" style="margin-bottom:0;">
         <button class="yesno-btn" id="ben-no-btn" onclick="setBenefits(false)">No benefits</button>
         <button class="yesno-btn" id="ben-yes-btn" onclick="setBenefits(true)">Yes, I have benefits</button>
@@ -909,16 +941,43 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 
     <div class="settings-section" id="pto-settings-wrap">
       <h3>🌴 PTO Settings</h3>
-      <div class="settings-row">
-        <div class="settings-field"><label>PTO start / hire date</label><input type="date" id="set-pto-start"></div>
-        <div class="settings-field"><label>Hours accrued per month</label><input type="number" id="set-pto-accrual" placeholder="10"></div>
+      <div class="settings-field"><label>PTO Type</label>
+        <select id="set-pto-type" onchange="updateSettingsPTOType()">
+          <option value="accruing">📅 Accruing — builds monthly</option>
+          <option value="frontloaded">🎁 Frontloaded — all hours at year start</option>
+          <option value="unlimited">♾️ Unlimited — no balance limit</option>
+        </select>
       </div>
-      <div class="settings-row">
-        <div class="settings-field"><label>Annual PTO cap (hours)</label><input type="number" id="set-pto-max" placeholder="120"></div>
-        <div class="settings-field"><label>Rollover hours</label><input type="number" id="set-pto-rollover" placeholder="40"></div>
+      <div id="set-pto-accruing-fields">
+        <div class="settings-row">
+          <div class="settings-field"><label>Start / hire date</label><input type="date" id="set-pto-start"></div>
+          <div class="settings-field"><label>Hours accrued per month</label><input type="number" id="set-pto-accrual" placeholder="10"></div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-field"><label>Annual PTO cap (hours)</label><input type="number" id="set-pto-max" placeholder="120"></div>
+          <div class="settings-field"><label>Rollover hours</label><input type="number" id="set-pto-rollover" placeholder="40"></div>
+        </div>
+      </div>
+      <div id="set-pto-frontloaded-fields" style="display:none;">
+        <div class="settings-row">
+          <div class="settings-field"><label>Total hours per year</label><input type="number" id="set-pto-frontloaded" placeholder="120"></div>
+          <div class="settings-field"><label>Start / hire date</label><input type="date" id="set-pto-start-fl"></div>
+        </div>
       </div>
       <div class="settings-field"><label>Protected / sick hours per year</label><input type="number" id="set-pto-protected" placeholder="40"></div>
       <button class="btn-save" onclick="savePTOSettings()">Save PTO Settings</button>
+    </div>
+
+    <div class="settings-section">
+      <h3>📋 Budget Categories</h3>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Toggle categories on or off. Changes apply immediately to your Budget and Expenses tabs.</div>
+      <div id="settings-cats-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:8px;margin-bottom:14px;"></div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Custom categories</div>
+      <div class="custom-entries" id="settings-custom-cats"></div>
+      <button class="add-custom-btn" onclick="addSettingsCat()" id="settings-add-cat-btn" style="margin-top:8px;">+ Add custom category</button>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-save" onclick="saveCategories()">Apply Changes</button>
+      </div>
     </div>
 
     <div class="settings-section">
@@ -1040,46 +1099,95 @@ const STATE_TAXES={
 };
 
 // ═══════════════════════════════════════════════════════════
-// USER / AUTH (mock — replace with Supabase calls)
+// SUPABASE — Cloud auth & database
 // ═══════════════════════════════════════════════════════════
-// TO INTEGRATE SUPABASE:
-// 1. npm install @supabase/supabase-js
-// 2. Replace signUp/signIn with supabase.auth.signUp / signInWithPassword
-// 3. Replace saveUser / getCurrentUser with supabase.from('profiles').upsert / .select
 
-const DB_KEY='nw_users_db_v3';
-const CU_KEY='nw_current_user_v3';
+const {createClient}=supabase;
+const sb=createClient(
+  'https://nydeaqxhaaartktfldwv.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55ZGVhcXhoYWFhcnRrdGZsZHd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwOTkyNjIsImV4cCI6MjEwMDY3NTI2Mn0.eUX7Q0YRcwj7qaegj9rIWaEPipj-0HZMYgU6cAU_lCo'
+);
+
 let user=null;
 
-function getDB(){return JSON.parse(localStorage.getItem(DB_KEY)||'{}');}
-function saveDB(db){localStorage.setItem(DB_KEY,JSON.stringify(db));}
+function getEmptyData(){
+  return{expenses:{},benefits:{},logs:[],alloc:{},savingsLogs:[],atsLogs:[],loans:[],ptoLog:[],adjustments:[]};
+}
 
-function signUp(email,pass){
-  const db=getDB();
-  if(db[email])return{error:'An account with that email already exists.'};
-  const u={email,password:btoa(pass),profile:null,
-    data:{expenses:{},benefits:{},logs:[],alloc:{},savingsLogs:[],atsLogs:[],loans:[],ptoLog:[],adjustments:[]},
-    subscription:{status:'none',plan:null,trialEnd:null},createdAt:new Date().toISOString()};
-  db[email]=u;saveDB(db);localStorage.setItem(CU_KEY,email);return{user:u};
+async function loadUserFromDB(id,email){
+  try{
+    const[{data:prof},{data:dat}]=await Promise.all([
+      sb.from('profiles').select('*').eq('id',id).single(),
+      sb.from('user_data').select('*').eq('id',id).single()
+    ]);
+    return{user:{
+      id,email,
+      profile:prof?.profile||null,
+      subscription:prof?.subscription||{status:'none',plan:null,trialEnd:null},
+      data:dat?{
+        expenses:dat.expenses||{},benefits:dat.benefits||{},
+        logs:dat.logs||[],alloc:dat.alloc||{},
+        savingsLogs:dat.savings_logs||[],atsLogs:dat.ats_logs||[],
+        loans:dat.loans||[],ptoLog:dat.pto_log||[],
+        adjustments:dat.adjustments||[]
+      }:getEmptyData()
+    }};
+  }catch(err){
+    console.error('Load user error:',err);
+    return{user:{id,email,profile:null,subscription:{status:'none',plan:null,trialEnd:null},data:getEmptyData()}};
+  }
 }
-function signIn(email,pass){
-  const db=getDB();const u=db[email];
-  if(!u)return{error:'No account found with that email.'};
-  if(u.password!==btoa(pass))return{error:'Incorrect password.'};
-  // Migrate old data structure if needed
-  if(!u.data.adjustments)u.data.adjustments=[];
-  localStorage.setItem(CU_KEY,email);return{user:u};
+
+async function signUp(email,pass){
+  const{data,error}=await sb.auth.signUp({email,password:pass});
+  if(error)return{error:error.message};
+  const id=data.user.id;
+  await Promise.all([
+    sb.from('profiles').insert({id,email,profile:null,subscription:{status:'none',plan:null,trialEnd:null}}),
+    sb.from('user_data').insert({id,expenses:{},benefits:{},logs:[],alloc:{},savings_logs:[],ats_logs:[],loans:[],pto_log:[],adjustments:[]})
+  ]);
+  return{user:{id,email,profile:null,subscription:{status:'none',plan:null,trialEnd:null},data:getEmptyData()}};
 }
-function getCurrentUser(){
-  const email=localStorage.getItem(CU_KEY);if(!email)return null;
-  const u=(getDB())[email]||null;
-  if(u&&!u.data.adjustments)u.data.adjustments=[];
-  return u;
+
+async function signIn(email,pass){
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error)return{error:error.message};
+  return await loadUserFromDB(data.user.id,email);
 }
+
+// Debounced save — waits 800ms after last change before writing to Supabase
+let _saveTimer=null;
 function saveUser(){
-  if(!user)return;const db=getDB();db[user.email]=user;saveDB(db);
+  if(!user||!user.id)return;
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(()=>_doSave(),800);
 }
-function handleSignOut(){user=null;localStorage.removeItem(CU_KEY);showScreen('auth');}
+async function _doSave(){
+  if(!user||!user.id)return;
+  try{
+    await Promise.all([
+      sb.from('profiles').upsert({id:user.id,email:user.email,profile:user.profile,subscription:user.subscription,updated_at:new Date().toISOString()}),
+      sb.from('user_data').upsert({
+        id:user.id,
+        expenses:user.data.expenses||{},benefits:user.data.benefits||{},
+        logs:user.data.logs||[],alloc:user.data.alloc||{},
+        savings_logs:user.data.savingsLogs||[],ats_logs:user.data.atsLogs||[],
+        loans:user.data.loans||[],pto_log:user.data.ptoLog||[],
+        adjustments:user.data.adjustments||[],
+        updated_at:new Date().toISOString()
+      })
+    ]);
+  }catch(err){console.error('Save error:',err);}
+}
+async function saveUserImmediate(){
+  clearTimeout(_saveTimer);
+  await _doSave();
+}
+
+async function handleSignOut(){
+  await sb.auth.signOut();
+  user=null;showScreen('auth');
+}
 
 // ═══════════════════════════════════════════════════════════
 // SCREEN NAV
@@ -1102,22 +1210,24 @@ function switchAuthMode(mode){
   document.getElementById('auth-submit-btn').textContent=mode==='signin'?'Sign In':'Create Account';
   document.getElementById('auth-error').classList.remove('show');
 }
-function handleAuth(){
+async function handleAuth(){
   const email=document.getElementById('auth-email').value.trim().toLowerCase();
   const pass=document.getElementById('auth-password').value;
   const errEl=document.getElementById('auth-error');
+  const btn=document.getElementById('auth-submit-btn');
   errEl.classList.remove('show');
   if(!email||!pass){errEl.textContent='Please fill in all fields.';errEl.classList.add('show');return;}
+  btn.disabled=true;btn.textContent=authMode==='signin'?'Signing in…':'Creating account…';
   if(authMode==='signup'){
     const confirm=document.getElementById('auth-confirm').value;
-    if(pass!==confirm){errEl.textContent='Passwords do not match.';errEl.classList.add('show');return;}
-    if(pass.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.classList.add('show');return;}
-    const res=signUp(email,pass);
-    if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
+    if(pass!==confirm){errEl.textContent='Passwords do not match.';errEl.classList.add('show');btn.disabled=false;btn.textContent='Create Account';return;}
+    if(pass.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.classList.add('show');btn.disabled=false;btn.textContent='Create Account';return;}
+    const res=await signUp(email,pass);
+    if(res.error){errEl.textContent=res.error;errEl.classList.add('show');btn.disabled=false;btn.textContent='Create Account';return;}
     user=res.user;startOnboarding();
   }else{
-    const res=signIn(email,pass);
-    if(res.error){errEl.textContent=res.error;errEl.classList.add('show');return;}
+    const res=await signIn(email,pass);
+    if(res.error){errEl.textContent=res.error;errEl.classList.add('show');btn.disabled=false;btn.textContent='Sign In';return;}
     user=res.user;
     if(!user.profile)startOnboarding();
     else if(user.subscription.status==='none')showScreen('payment');
@@ -1132,10 +1242,16 @@ function handleAuth(){
 let obStep=0;
 const OB_STEPS=['Location','Income','Savings Goals','Budget Categories','PTO','Benefits'];
 let obData={state:'FL',incomeType:'annual',salary:'',hourlyRate:'',hoursPerWeek:'',
-  selectedGoals:[],customGoals:[],selectedCats:[],customCats:[],
-  hasPets:false,selectedPetCats:[],hasKids:false,selectedKidCats:[],
-  hasPTO:false,ptoConfig:{startDate:'',accrualPerMonth:10,maxAnnual:120,rollover:40,protectedHours:40},
-  hasBenefits:false,selectedBenefits:[]};
+  // Pre-selected common savings goals
+  selectedGoals:['emergency','investments'],
+  customGoals:[],
+  // Pre-selected universal budget categories
+  selectedCats:['rent','utilities','groceries','doordash','restaurants','gas','car_insurance','phone','personal','clothing','medical','gym','subscriptions','entertainment','shopping'],
+  customCats:[],
+  hasPets:null,selectedPetCats:[],hasKids:null,selectedKidCats:[],
+  hasPTO:null,
+  ptoConfig:{type:'accruing',startDate:'',accrualPerMonth:10,frontloadedHours:120,maxAnnual:120,rollover:40,protectedHours:40},
+  hasBenefits:null,selectedBenefits:[]};
 
 function buildStateSelect(id){
   const sel=document.getElementById(id);if(!sel)return;
@@ -1254,11 +1370,22 @@ function setYesNo(key,val){
   if(key==='pets'){obData.hasPets=val;document.getElementById('pets-yes').classList.toggle('active-yes',val);document.getElementById('pets-no').classList.toggle('active-no',!val);document.getElementById('pets-cats').classList.toggle('show',val);}
   if(key==='kids'){obData.hasKids=val;document.getElementById('kids-yes').classList.toggle('active-yes',val);document.getElementById('kids-no').classList.toggle('active-no',!val);document.getElementById('kids-cats').classList.toggle('show',val);}
 }
+function setPTOType(type){
+  obData.ptoConfig.type=type;
+  ['accruing','frontloaded','unlimited'].forEach(t=>{
+    const el=document.getElementById('pto-type-'+t);
+    if(el)el.classList.toggle('selected',t===type);
+  });
+  document.getElementById('pto-accruing-fields').style.display=type==='accruing'?'':'none';
+  document.getElementById('pto-frontloaded-fields').style.display=type==='frontloaded'?'':'none';
+  document.getElementById('pto-unlimited-fields').style.display=type==='unlimited'?'':'none';
+}
 function setPTO(val){
   obData.hasPTO=val;
   document.getElementById('pto-yes-btn').classList.toggle('active-yes',val);
   document.getElementById('pto-no-btn').classList.toggle('active-no',!val);
   document.getElementById('pto-details').classList.toggle('show',val);
+  if(val&&obData.ptoConfig.type){setPTOType(obData.ptoConfig.type);}
 }
 function setBenefits(val){
   obData.hasBenefits=val;
@@ -1282,8 +1409,36 @@ function obNext(){
   else if(obStep===1){
     if(obData.incomeType==='annual'){obData.salary=parseFloat(document.getElementById('ob-salary').value)||0;}
     else{obData.hourlyRate=parseFloat(document.getElementById('ob-hourly-rate').value)||0;obData.hoursPerWeek=parseFloat(document.getElementById('ob-hours').value)||40;obData.salary=Math.round(obData.hourlyRate*obData.hoursPerWeek*52);}
-  }else if(obStep===4&&obData.hasPTO){
-    obData.ptoConfig={startDate:document.getElementById('ob-pto-start').value,accrualPerMonth:parseFloat(document.getElementById('ob-pto-accrual').value)||10,maxAnnual:parseFloat(document.getElementById('ob-pto-max').value)||120,rollover:parseFloat(document.getElementById('ob-pto-rollover').value)||40,protectedHours:parseFloat(document.getElementById('ob-pto-protected').value)||40};
+  }else if(obStep===2){
+    // Warn if no savings goals selected
+    const totalGoals=obData.selectedGoals.length+(obData.customGoals||[]).filter(Boolean).length;
+    if(totalGoals===0){
+      if(!confirm('⚠️ You haven't selected any savings goals — your savings allocation section will be empty. Go back to add some?')){}
+      else{return;}// stay on step
+    }
+  }else if(obStep===3){
+    // Warn if no budget categories selected
+    const totalCats=obData.selectedCats.length+(obData.selectedPetCats||[]).length+(obData.selectedKidCats||[]).length+(obData.customCats||[]).filter(Boolean).length;
+    if(totalCats===0){
+      alert('⚠️ You haven't selected any budget categories — your Budget tab will be empty. Please select at least one category before continuing.');
+      return;
+    }
+    if(obData.hasPets===null){alert('Please answer the pets question before continuing.');return;}
+    if(obData.hasKids===null){alert('Please answer the children question before continuing.');return;}
+  }else if(obStep===4){
+    if(obData.hasPTO===null){alert('Please select whether your job offers PTO before continuing.');return;}
+    if(obData.hasPTO){
+      const type=obData.ptoConfig.type||'accruing';
+      if(type==='accruing'){
+        obData.ptoConfig={type:'accruing',startDate:document.getElementById('ob-pto-start').value,accrualPerMonth:parseFloat(document.getElementById('ob-pto-accrual').value)||10,maxAnnual:parseFloat(document.getElementById('ob-pto-max').value)||120,rollover:parseFloat(document.getElementById('ob-pto-rollover').value)||40,protectedHours:parseFloat(document.getElementById('ob-pto-protected').value)||40};
+      }else if(type==='frontloaded'){
+        obData.ptoConfig={type:'frontloaded',startDate:document.getElementById('ob-pto-start-fl').value,frontloadedHours:parseFloat(document.getElementById('ob-pto-frontloaded').value)||120,protectedHours:parseFloat(document.getElementById('ob-pto-protected-fl').value)||40};
+      }else{
+        obData.ptoConfig={type:'unlimited',protectedHours:parseFloat(document.getElementById('ob-pto-protected-ul').value)||40};
+      }
+    }
+  }else if(obStep===5){
+    if(obData.hasBenefits===null){alert('Please select whether your job offers benefits before continuing.');return;}
   }
   if(obStep<OB_STEPS.length-1){obStep++;renderObStep();}
   else{user.profile=obData;saveUser();runLoadingScreen();}
@@ -1443,6 +1598,7 @@ function initApp(){
   buildMonthFilter('sl-month-filter');
   buildStateSelectSettings();
   loadSettingsForm();
+  buildSettingsCatsGrid();
   updateAdjTypeOptions();
   renderAdjustments();
   const today=new Date().toISOString().slice(0,10);
@@ -1683,6 +1839,7 @@ function showTab(name){
   if(name==='alltime')renderAllTime();
   if(name==='loans')renderLoans();
   if(name==='pto')renderPTO();
+  if(name==='settings')buildSettingsCatsGrid();
 }
 
 function buildMonthFilter(id){
@@ -1875,12 +2032,30 @@ function renderLoans(){
 // ═══════════════════════════════════════════════════════════
 
 function calcPTOAccrued(){
-  const pc=user.profile.ptoConfig;if(!pc||!pc.startDate)return 0;
+  const pc=user.profile.ptoConfig;
+  if(!pc)return 0;
+  const type=pc.type||'accruing';
+  if(type==='unlimited')return 9999;
+  if(type==='frontloaded')return pc.frontloadedHours||0;
+  // Accruing
+  if(!pc.startDate)return 0;
   const now=new Date(),start=new Date(pc.startDate+'T00:00:00');if(now<start)return 0;
   let accrualFrom=now.getFullYear()===start.getFullYear()?start:new Date(now.getFullYear(),0,1);
   let months=(now.getFullYear()-accrualFrom.getFullYear())*12+(now.getMonth()-accrualFrom.getMonth());
   if(now.getDate()<accrualFrom.getDate())months=Math.max(0,months-1);
   return Math.min(pc.maxAnnual||120,months*(pc.accrualPerMonth||10));
+}
+function getPTOBalance(){
+  const pc=user.profile.ptoConfig||{};
+  const type=pc.type||'accruing';
+  const approved=user.data.ptoLog.filter(e=>e.status==='approved');
+  const usedGeneral=approved.filter(e=>e.category==='general').reduce((s,e)=>s+e.hours,0);
+  const usedProtected=approved.filter(e=>e.category==='protected').reduce((s,e)=>s+e.hours,0);
+  const usedTotal=usedGeneral+usedProtected;
+  const protBal=Math.max(0,(pc.protectedHours||0)-usedProtected);
+  if(type==='unlimited')return{type:'unlimited',accrued:9999,usedTotal,totalBalance:9999,protectedBalance:protBal};
+  const accrued=calcPTOAccrued();
+  return{type,accrued,usedTotal,totalBalance:Math.max(0,accrued-usedTotal),protectedBalance:protBal};
 }
 function requestPTO(){
   const start=document.getElementById('pto-start').value;const end=document.getElementById('pto-end').value||start;
@@ -1899,21 +2074,29 @@ function deletePTOEntry(id){user.data.ptoLog=user.data.ptoLog.filter(e=>e.id!==i
 function clearAllPTO(){if(!confirm('Clear all PTO entries?'))return;user.data.ptoLog=[];saveUser();renderPTO();}
 
 function renderPTO(){
-  const pc=user.profile.ptoConfig||{};const accrued=calcPTOAccrued();const maxAnnual=pc.maxAnnual||120;
-  const approved=user.data.ptoLog.filter(e=>e.status==='approved');
-  const usedGeneral=approved.filter(e=>e.category==='general').reduce((s,e)=>s+e.hours,0);
-  const usedProtected=approved.filter(e=>e.category==='protected').reduce((s,e)=>s+e.hours,0);
-  const usedTotal=usedGeneral+usedProtected;
-  const totalBalance=Math.max(0,accrued-usedTotal);
-  const protBal=Math.max(0,(pc.protectedHours||0)-usedProtected);
+  const pc=user.profile.ptoConfig||{};
+  const bal=getPTOBalance();
+  const type=bal.type;
+  const{accrued,usedTotal,totalBalance,protectedBalance}=bal;
+  const maxAnnual=pc.maxAnnual||120;
   const hero=document.getElementById('pto-hero');hero.innerHTML='';
-  [{label:'Available PTO',val:`${totalBalance} hrs`,sub:`${(totalBalance/8).toFixed(1)} days`,cls:''},{label:'Protected PTO',val:`${protBal} hrs`,sub:`${(protBal/8).toFixed(1)} days`,cls:'teal'},{label:'Used This Year',val:`${usedTotal} hrs`,sub:`${(usedTotal/8).toFixed(1)} days`,cls:''},{label:'Accrued This Year',val:`${accrued} hrs`,sub:`of ${maxAnnual} max`,cls:''}].forEach(c=>{const card=document.createElement('div');card.className='pto-hero-card '+c.cls;card.innerHTML=`<div class="pto-card-label">${c.label}</div><div class="pto-card-val">${c.val}</div><div class="pto-card-sub">${c.sub}</div>`;hero.appendChild(card);});
-  document.getElementById('pto-accrual-bar').style.width=(accrued/maxAnnual*100)+'%';
-  document.getElementById('pto-accrual-label').textContent=`${accrued} / ${maxAnnual} hrs accrued this year`;
-  const now=new Date();const monthsLeft=Math.max(0,12-now.getMonth()-1);const willAccrue=Math.min(maxAnnual-accrued,monthsLeft*(pc.accrualPerMonth||10));const projBal=Math.max(0,accrued+willAccrue-usedTotal);const willExpire=Math.max(0,projBal-(pc.rollover||40));
+  const isUnlimited=type==='unlimited';
+  [{label:'Available PTO',val:isUnlimited?'Unlimited':`${totalBalance} hrs`,sub:isUnlimited?'No limit':`${(totalBalance/8).toFixed(1)} days`,cls:''},
+   {label:'Protected PTO',val:`${protectedBalance} hrs`,sub:`${(protectedBalance/8).toFixed(1)} days`,cls:'teal'},
+   {label:'Used This Year',val:`${usedTotal} hrs`,sub:`${(usedTotal/8).toFixed(1)} days`,cls:''},
+   {label:type==='unlimited'?'PTO Type':type==='frontloaded'?'Frontloaded':'Accrued This Year',
+    val:type==='unlimited'?'♾️ Unlimited':type==='frontloaded'?`${accrued} hrs total`:`${accrued} hrs`,
+    sub:type==='unlimited'?'Track requests only':type==='frontloaded'?'Received at year start':`of ${maxAnnual} max`,cls:''}
+  ].forEach(c=>{const card=document.createElement('div');card.className='pto-hero-card '+c.cls;card.innerHTML=`<div class="pto-card-label">${c.label}</div><div class="pto-card-val">${c.val}</div><div class="pto-card-sub">${c.sub}</div>`;hero.appendChild(card);});
+  const barPct=isUnlimited?100:type==='frontloaded'?(usedTotal/accrued*100):accrued/(maxAnnual||1)*100;
+  document.getElementById('pto-accrual-bar').style.width=Math.min(100,barPct)+'%';
+  document.getElementById('pto-accrual-label').textContent=isUnlimited?'Unlimited PTO — no balance limit':type==='frontloaded'?`${usedTotal} / ${accrued} hrs used this year`:`${accrued} / ${maxAnnual} hrs accrued this year`;
   const wb=document.getElementById('pto-warning-box');
-  if(willExpire>0){wb.className='pto-warning-box show';wb.innerHTML=`⚠️ <strong>Heads up!</strong> Approximately <strong>${willExpire} hours (${(willExpire/8).toFixed(1)} days)</strong> may expire at year end. Only ${pc.rollover||40}h rolls over. Consider scheduling some time off!`;}
-  else wb.className='pto-warning-box';
+  if(!isUnlimited&&type==='accruing'){
+    const now=new Date();const monthsLeft=Math.max(0,12-now.getMonth()-1);const willAccrue=Math.min(maxAnnual-accrued,monthsLeft*(pc.accrualPerMonth||10));const projBal=Math.max(0,accrued+willAccrue-usedTotal);const willExpire=Math.max(0,projBal-(pc.rollover||40));
+    if(willExpire>0){wb.className='pto-warning-box show';wb.innerHTML=`⚠️ <strong>Heads up!</strong> Approximately <strong>${willExpire} hours (${(willExpire/8).toFixed(1)} days)</strong> may expire at year end. Only ${pc.rollover||40}h rolls over. Consider scheduling time off!`;}
+    else wb.className='pto-warning-box';
+  } else wb.className='pto-warning-box';
   const list=document.getElementById('pto-log-list');
   if(!user.data.ptoLog.length){list.innerHTML='<div class="log-empty">No PTO requests yet.</div>';return;}
   list.innerHTML='';
@@ -1954,10 +2137,14 @@ function loadSettingsForm(){
   setSettingsIncomeType(p.incomeType||'annual');
   const ptoWrap=document.getElementById('pto-settings-wrap');if(ptoWrap)ptoWrap.style.display=p.hasPTO?'':'none';
   if(p.hasPTO&&p.ptoConfig){
+    const pt=document.getElementById('set-pto-type');if(pt)pt.value=p.ptoConfig.type||'accruing';
+    updateSettingsPTOType();
     document.getElementById('set-pto-start').value=p.ptoConfig.startDate||'';
     document.getElementById('set-pto-accrual').value=p.ptoConfig.accrualPerMonth||10;
     document.getElementById('set-pto-max').value=p.ptoConfig.maxAnnual||120;
     document.getElementById('set-pto-rollover').value=p.ptoConfig.rollover||40;
+    const fl=document.getElementById('set-pto-frontloaded');if(fl)fl.value=p.ptoConfig.frontloadedHours||120;
+    const flst=document.getElementById('set-pto-start-fl');if(flst)flst.value=p.ptoConfig.startDate||'';
     document.getElementById('set-pto-protected').value=p.ptoConfig.protectedHours||40;
   }
 }
@@ -1968,13 +2155,27 @@ function saveIncomeSettings(){
   user.profile.state=document.getElementById('set-state').value;
   saveUser();updateBudgetStateBadge();recalcBudget();alert('✅ Income & tax settings saved.');
 }
+function updateSettingsPTOType(){
+  const type=document.getElementById('set-pto-type')?.value||'accruing';
+  const af=document.getElementById('set-pto-accruing-fields');
+  const ff=document.getElementById('set-pto-frontloaded-fields');
+  if(af)af.style.display=type==='accruing'?'':'none';
+  if(ff)ff.style.display=type==='frontloaded'?'':'none';
+}
 function savePTOSettings(){
   if(!user.profile.ptoConfig)user.profile.ptoConfig={};
-  user.profile.ptoConfig.startDate=document.getElementById('set-pto-start').value;
-  user.profile.ptoConfig.accrualPerMonth=parseFloat(document.getElementById('set-pto-accrual').value)||10;
-  user.profile.ptoConfig.maxAnnual=parseFloat(document.getElementById('set-pto-max').value)||120;
-  user.profile.ptoConfig.rollover=parseFloat(document.getElementById('set-pto-rollover').value)||40;
+  const type=document.getElementById('set-pto-type')?.value||'accruing';
+  user.profile.ptoConfig.type=type;
   user.profile.ptoConfig.protectedHours=parseFloat(document.getElementById('set-pto-protected').value)||40;
+  if(type==='accruing'){
+    user.profile.ptoConfig.startDate=document.getElementById('set-pto-start').value;
+    user.profile.ptoConfig.accrualPerMonth=parseFloat(document.getElementById('set-pto-accrual').value)||10;
+    user.profile.ptoConfig.maxAnnual=parseFloat(document.getElementById('set-pto-max').value)||120;
+    user.profile.ptoConfig.rollover=parseFloat(document.getElementById('set-pto-rollover').value)||40;
+  }else if(type==='frontloaded'){
+    user.profile.ptoConfig.frontloadedHours=parseFloat(document.getElementById('set-pto-frontloaded').value)||120;
+    user.profile.ptoConfig.startDate=document.getElementById('set-pto-start-fl').value;
+  }
   saveUser();alert('✅ PTO settings saved.');
 }
 function updateSubscriptionBadge(){
@@ -1992,6 +2193,66 @@ function updateSubscriptionBadge(){
 // ═══════════════════════════════════════════════════════════
 // EXPORT / IMPORT
 // ═══════════════════════════════════════════════════════════
+
+// ── ADMIN BYPASS ──
+// Usage in browser console: nw_bypass('NW_Admin_2026!')
+window.nw_bypass=function(code){
+  if(typeof btoa(code)!=='undefined'&&btoa(code)==='TldfQWRtaW5fMjAyNiE='){
+    if(!user){console.log('%c✗ Sign in first, then run nw_bypass()','color:#F87171;font-size:13px');return;}
+    user.subscription={status:'active',plan:'annual',trialEnd:null};
+    saveUserImmediate().then(()=>{initApp();console.log('%c✓ Admin access granted — enjoy NetWorth!','color:#00C896;font-size:14px;font-weight:bold');});
+  }else{
+    console.log('%c✗ Invalid code','color:#F87171;font-size:13px');
+  }
+};
+
+// ── SETTINGS CATEGORY MANAGEMENT ──
+function buildSettingsCatsGrid(){
+  const grid=document.getElementById('settings-cats-grid');if(!grid)return;
+  const all=[...MASTER_CATS];
+  if(user.profile.hasPets)all.push(...PET_CATS);
+  if(user.profile.hasKids)all.push(...KIDS_CATS);
+  const active=user.profile.selectedCats||[];
+  const active2=user.profile.selectedPetCats||[];
+  const active3=user.profile.selectedKidCats||[];
+  grid.innerHTML=all.map(c=>{
+    const isPet=PET_CATS.some(p=>p.id===c.id);
+    const isKid=KIDS_CATS.some(k=>k.id===c.id);
+    const isSelected=isPet?active2.includes(c.id):isKid?active3.includes(c.id):active.includes(c.id);
+    return `<div class="check-item${isSelected?' selected':''}" onclick="toggleSettingsCat('${c.id}',this,${isPet},${isKid})" style="padding:9px 11px;">
+      <span class="check-icon" style="font-size:14px;">${c.icon}</span><div class="check-box"></div><span class="check-label" style="font-size:12px;">${c.name}</span>
+    </div>`;
+  }).join('');
+  renderSettingsCustomCats();
+}
+function toggleSettingsCat(id,el,isPet,isKid){
+  el.classList.toggle('selected');
+  const arr=isPet?'selectedPetCats':isKid?'selectedKidCats':'selectedCats';
+  const list=user.profile[arr]||[];
+  if(list.includes(id))user.profile[arr]=list.filter(x=>x!==id);
+  else user.profile[arr]=[...list,id];
+}
+function renderSettingsCustomCats(){
+  const c=document.getElementById('settings-custom-cats');if(!c)return;
+  const cats=user.profile.customCats||[];
+  c.innerHTML=cats.map((v,i)=>`<div class="custom-entry-row"><input type="text" placeholder="Custom category" value="${escHtml(v)}" oninput="user.profile.customCats[${i}]=this.value"><button class="rm-btn" onclick="removeSettingsCat(${i})">✕</button></div>`).join('');
+  const btn=document.getElementById('settings-add-cat-btn');
+  if(btn)btn.style.display=cats.length>=15?'none':'block';
+}
+function addSettingsCat(){
+  if(!user.profile.customCats)user.profile.customCats=[];
+  if(user.profile.customCats.length>=15)return;
+  user.profile.customCats.push('');renderSettingsCustomCats();
+}
+function removeSettingsCat(i){user.profile.customCats.splice(i,1);renderSettingsCustomCats();}
+function saveCategories(){
+  saveUser();
+  // Rebuild budget grid with new categories
+  buildExpenseGrid();
+  buildCatSelect();
+  recalcBudget();
+  alert('✅ Categories updated.');
+}
 
 function exportData(){
   const blob=new Blob([JSON.stringify(user.data,null,2)],{type:'application/json'});
@@ -2013,25 +2274,28 @@ function importData(event){
 // BOOT
 // ═══════════════════════════════════════════════════════════
 
-// ── Handle return from Stripe Checkout ──
-const _sp=new URLSearchParams(window.location.search);
-if(_sp.get('payment')==='success'){
-  user=getCurrentUser();
-  if(user){
-    const _plan=localStorage.getItem('nw_pending_plan')||'monthly';
-    const _end=new Date();_end.setDate(_end.getDate()+3);
-    user.subscription={status:'trial',plan:_plan,trialEnd:_end.toISOString()};
-    saveUser();localStorage.removeItem('nw_pending_plan');
-    window.history.replaceState({},'','/'); // clean URL
-    initApp();
-  }else{showScreen('auth');}
-}else{
-  user=getCurrentUser();
-  if(!user)showScreen('auth');
-  else if(!user.profile)startOnboarding();
-  else if(user.subscription.status==='none')showScreen('payment');
-  else initApp();
-}
+// ── BOOT — restore Supabase session ──
+(async()=>{
+  const _sp=new URLSearchParams(window.location.search);
+  const{data:{session}}=await sb.auth.getSession();
+  if(session){
+    const result=await loadUserFromDB(session.user.id,session.user.email);
+    user=result.user;
+    if(_sp.get('payment')==='success'){
+      const _plan=localStorage.getItem('nw_pending_plan')||'monthly';
+      const _end=new Date();_end.setDate(_end.getDate()+3);
+      user.subscription={status:'trial',plan:_plan,trialEnd:_end.toISOString()};
+      await saveUserImmediate();
+      localStorage.removeItem('nw_pending_plan');
+      window.history.replaceState({},'','/');
+    }
+    if(!user.profile)startOnboarding();
+    else if(user.subscription.status==='none')showScreen('payment');
+    else initApp();
+  }else{
+    showScreen('auth');
+  }
+})();
 </script>
 </body>
 </html>
