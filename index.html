@@ -438,7 +438,41 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
     <div class="auth-field"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleAuth()"></div>
     <div class="auth-field" id="auth-confirm-wrap" style="display:none;"><label>Confirm Password</label><input type="password" id="auth-confirm" placeholder="••••••••"></div>
     <button class="btn-primary" id="auth-submit-btn" onclick="handleAuth()">Sign In</button>
+    <div id="auth-forgot" style="text-align:center;margin-top:12px;display:block;">
+      <a onclick="showForgotPassword()" style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Forgot your password?</a>
+    </div>
     <div class="auth-footer">By signing up, you agree to our Terms of Service</div>
+  </div>
+</div>
+
+<!-- ══ PASSWORD RESET ══ -->
+<div class="screen" id="screen-reset" style="align-items:center;justify-content:center;padding:32px 16px;">
+  <div class="auth-card">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="display:inline-flex;align-items:center;gap:10px;">
+        <svg width="34" height="34" viewBox="0 0 40 40" fill="none"><polygon points="6,50 28,12 72,12 94,50 72,88 28,88" fill="none" stroke="#00C896" stroke-width="5" stroke-linejoin="round"/><polyline points="22,73 38,52 52,63 77,33" fill="none" stroke="#00C896" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="22" cy="73" r="5" fill="#00C896"/><circle cx="38" cy="52" r="5" fill="#00C896"/><circle cx="52" cy="63" r="5" fill="#00C896"/><circle cx="77" cy="33" r="5" fill="#00C896"/><polyline points="73,29 77,33 73,37" fill="none" stroke="#00C896" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="nw-logo-text">Net<span>Worth</span></span>
+      </div>
+    </div>
+    <div id="reset-request-form">
+      <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;">Reset your password</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Enter your email and we'll send you a reset link.</div>
+      <div id="reset-error" class="auth-error"></div>
+      <div id="reset-success" style="font-size:13px;color:var(--good);margin-bottom:12px;display:none;">✓ Reset link sent — check your email.</div>
+      <div class="auth-field"><label>Email</label><input type="email" id="reset-email" placeholder="you@example.com"></div>
+      <button class="btn-primary" id="reset-submit-btn" onclick="sendPasswordReset()">Send Reset Link</button>
+    </div>
+    <div id="reset-new-password-form" style="display:none;">
+      <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;">Set new password</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:22px;">Choose a new password for your account.</div>
+      <div id="reset-pw-error" class="auth-error"></div>
+      <div class="auth-field"><label>New password</label><input type="password" id="reset-new-pw" placeholder="••••••••"></div>
+      <div class="auth-field"><label>Confirm password</label><input type="password" id="reset-confirm-pw" placeholder="••••••••"></div>
+      <button class="btn-primary" id="reset-pw-btn" onclick="updatePassword()">Update Password</button>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <a onclick="showScreen('auth')" style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Back to sign in</a>
+    </div>
   </div>
 </div>
 
@@ -1208,6 +1242,8 @@ function switchAuthMode(mode){
   document.getElementById('auth-confirm-wrap').style.display=mode==='signup'?'block':'none';
   document.getElementById('auth-submit-btn').textContent=mode==='signin'?'Sign In':'Create Account';
   document.getElementById('auth-error').classList.remove('show');
+  const forgot=document.getElementById('auth-forgot');
+  if(forgot)forgot.style.display=mode==='signin'?'block':'none';
 }
 async function handleAuth(){
   const email=document.getElementById('auth-email').value.trim().toLowerCase();
@@ -2195,6 +2231,51 @@ function updateSubscriptionBadge(){
 // EXPORT / IMPORT
 // ═══════════════════════════════════════════════════════════
 
+// ── PASSWORD RESET ──
+function showForgotPassword(){
+  showScreen('reset');
+  document.getElementById('reset-request-form').style.display='block';
+  document.getElementById('reset-new-password-form').style.display='none';
+  document.getElementById('reset-error').classList.remove('show');
+  document.getElementById('reset-success').style.display='none';
+  document.getElementById('reset-email').value='';
+}
+
+async function sendPasswordReset(){
+  const email=document.getElementById('reset-email').value.trim();
+  const errEl=document.getElementById('reset-error');
+  const btn=document.getElementById('reset-submit-btn');
+  const successEl=document.getElementById('reset-success');
+  errEl.classList.remove('show');successEl.style.display='none';
+  if(!email){errEl.textContent='Please enter your email.';errEl.classList.add('show');return;}
+  btn.disabled=true;btn.textContent='Sending…';
+  const{error}=await sb.auth.resetPasswordForEmail(email,{
+    redirectTo:'https://networth.ink/?reset=true'
+  });
+  btn.disabled=false;btn.textContent='Send Reset Link';
+  if(error){errEl.textContent=error.message;errEl.classList.add('show');}
+  else{successEl.style.display='block';}
+}
+
+async function updatePassword(){
+  const pw=document.getElementById('reset-new-pw').value;
+  const confirm=document.getElementById('reset-confirm-pw').value;
+  const errEl=document.getElementById('reset-pw-error');
+  const btn=document.getElementById('reset-pw-btn');
+  errEl.classList.remove('show');
+  if(!pw||pw.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.classList.add('show');return;}
+  if(pw!==confirm){errEl.textContent='Passwords do not match.';errEl.classList.add('show');return;}
+  btn.disabled=true;btn.textContent='Updating…';
+  const{error}=await sb.auth.updateUser({password:pw});
+  btn.disabled=false;btn.textContent='Update Password';
+  if(error){errEl.textContent=error.message;errEl.classList.add('show');}
+  else{
+    alert('✅ Password updated! Please sign in with your new password.');
+    await sb.auth.signOut();
+    showScreen('auth');
+  }
+}
+
 // ── ADMIN BYPASS ──
 // Usage in browser console: nw_bypass('NW_Admin_2026!')
 window.nw_bypass=function(code){
@@ -2278,6 +2359,20 @@ function importData(event){
 // ── BOOT — restore Supabase session ──
 (async()=>{
   const _sp=new URLSearchParams(window.location.search);
+
+  // Handle password reset redirect
+  if(_sp.get('reset')==='true'){
+    const{data:{session}}=await sb.auth.getSession();
+    if(session){
+      // Show the new password form
+      showScreen('reset');
+      document.getElementById('reset-request-form').style.display='none';
+      document.getElementById('reset-new-password-form').style.display='block';
+      window.history.replaceState({},'','/');
+      return;
+    }
+  }
+
   const{data:{session}}=await sb.auth.getSession();
   if(session){
     const result=await loadUserFromDB(session.user.id,session.user.email);
