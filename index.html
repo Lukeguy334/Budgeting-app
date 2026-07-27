@@ -6,8 +6,6 @@
 <title>NetWorth — Know Your Number</title>
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="icon" type="image/png" href="/favicon.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="description" content="NetWorth — Your personalized budget tracker with state-by-state tax calculations, savings goals, expense tracking, PTO management, and loan calculators.">
 <meta property="og:title" content="NetWorth — Know Your Number">
 <meta property="og:description" content="Budget smarter. Track savings goals, calculate your real take-home pay, manage PTO, and more — all in one personalized dashboard.">
@@ -1142,10 +1140,8 @@ async function signUp(email,pass){
   const{data,error}=await sb.auth.signUp({email,password:pass});
   if(error)return{error:error.message};
   const id=data.user.id;
-  await Promise.all([
-    sb.from('profiles').insert({id,email,profile:null,subscription:{status:'none',plan:null,trialEnd:null}}),
-    sb.from('user_data').insert({id,expenses:{},benefits:{},logs:[],alloc:{},savings_logs:[],ats_logs:[],loans:[],pto_log:[],adjustments:[]})
-  ]);
+  // Don't insert immediately — session needs a moment to establish.
+  // The rows will be created by saveUserImmediate() after onboarding.
   return{user:{id,email,profile:null,subscription:{status:'none',plan:null,trialEnd:null},data:getEmptyData()}};
 }
 
@@ -1164,9 +1160,12 @@ function saveUser(){
 }
 async function _doSave(){
   if(!user||!user.id)return;
+  // Ensure session is active before writing
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){console.warn('No active session — skipping save');return;}
   try{
     await Promise.all([
-      sb.from('profiles').upsert({id:user.id,email:user.email,profile:user.profile,subscription:user.subscription,updated_at:new Date().toISOString()}),
+      sb.from('profiles').upsert({id:user.id,email:user.email,profile:user.profile,subscription:user.subscription,updated_at:new Date().toISOString()},{onConflict:'id'}),
       sb.from('user_data').upsert({
         id:user.id,
         expenses:user.data.expenses||{},benefits:user.data.benefits||{},
@@ -1175,7 +1174,7 @@ async function _doSave(){
         loans:user.data.loans||[],pto_log:user.data.ptoLog||[],
         adjustments:user.data.adjustments||[],
         updated_at:new Date().toISOString()
-      })
+      },{onConflict:'id'})
     ]);
   }catch(err){console.error('Save error:',err);}
 }
