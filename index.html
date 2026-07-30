@@ -2250,7 +2250,7 @@ async function sendPasswordReset(){
   if(!email){errEl.textContent='Please enter your email.';errEl.classList.add('show');return;}
   btn.disabled=true;btn.textContent='Sending…';
   const{error}=await sb.auth.resetPasswordForEmail(email,{
-    redirectTo:'https://networth.ink/?reset=true'
+    redirectTo:'https://networth.ink'
   });
   btn.disabled=false;btn.textContent='Send Reset Link';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');}
@@ -2360,16 +2360,16 @@ function importData(event){
 (async()=>{
   const _sp=new URLSearchParams(window.location.search);
 
-  // Handle password reset redirect
-  if(_sp.get('reset')==='true'){
-    const{data:{session}}=await sb.auth.getSession();
+  // Handle Supabase password reset — token arrives in URL hash
+  const _hash=window.location.hash;
+  if(_hash.includes('type=recovery')||_hash.includes('access_token')){
+    // Let Supabase process the hash token
+    const{data:{session},error}=await sb.auth.getSession();
     if(session){
-      // Show the new password form
       showScreen('reset');
       document.getElementById('reset-request-form').style.display='none';
       document.getElementById('reset-new-password-form').style.display='block';
-      window.history.replaceState({},'','/');
-      return;
+      window.history.replaceState({},'','/');      return;
     }
   }
 
@@ -2380,7 +2380,8 @@ function importData(event){
     if(_sp.get('payment')==='success'){
       const _plan=localStorage.getItem('nw_pending_plan')||'monthly';
       const _end=new Date();_end.setDate(_end.getDate()+3);
-      user.subscription={status:'trial',plan:_plan,trialEnd:_end.toISOString()};
+      const _cid=_sp.get('customer')||null;
+      user.subscription={status:'trial',plan:_plan,trialEnd:_end.toISOString(),stripeCustomerId:_cid};
       await saveUserImmediate();
       localStorage.removeItem('nw_pending_plan');
       window.history.replaceState({},'','/');
