@@ -417,7 +417,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 }
 
 /* ── LANDING PAGE ── */
-#screen-landing{flex-direction:column;min-height:100vh;overflow-y:auto;}
+#screen-landing{flex-direction:column;height:100vh;overflow-y:auto;scroll-behavior:smooth;}
 .lp-nav{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:64px;transition:height .35s cubic-bezier(.4,0,.2,1),background .35s,box-shadow .35s;}
 .lp-nav.scrolled{height:52px;background:rgba(13,15,20,.97);box-shadow:0 4px 40px rgba(0,200,150,.07);}
 .lp-nav-progress{position:absolute;bottom:0;left:0;height:2px;width:0%;background:linear-gradient(90deg,#00C896,#60A5FA);transition:width .08s linear;border-radius:0 2px 2px 0;}
@@ -2677,12 +2677,13 @@ function importData(event){
 
 // ── LANDING PAGE SCROLL EFFECTS ──
 (function(){
+  let _scrollInit=false;
   function initLandingEffects(){
+    if(_scrollInit)return;_scrollInit=true;
     const nav=document.getElementById('lp-nav');
     const bar=document.getElementById('lp-nav-progress');
     const scroller=document.getElementById('screen-landing');
     if(!nav||!scroller)return;
-
     scroller.addEventListener('scroll',()=>{
       const st=scroller.scrollTop;
       const maxScroll=scroller.scrollHeight-scroller.clientHeight;
@@ -2691,22 +2692,21 @@ function importData(event){
       nav.classList.toggle('scrolled',st>40);
     },{passive:true});
   }
-
-  // Run when landing screen becomes active
   const _origShow=window.showScreen;
   window.showScreen=function(name){
     _origShow(name);
-    if(name==='landing')setTimeout(initLandingEffects,50);
+    if(name==='landing'){_scrollInit=false;setTimeout(initLandingEffects,80);}
   };
-  // Also init immediately if landing is first screen shown
   setTimeout(()=>{
     if(document.getElementById('screen-landing')?.classList.contains('active'))initLandingEffects();
-  },200);
+  },300);
 })();
 
 // ── EASTER EGG — type "networth" for gravity chaos ──
 (function(){
-  let _buf='',_active=false,_items=[],_raf=null;
+  let _buf='',_active=false,_items=[];
+  // Velocity history for realistic throws
+  const _mhist=[];
 
   document.addEventListener('keydown',e=>{
     const landing=document.getElementById('screen-landing');
@@ -2718,121 +2718,123 @@ function importData(event){
     }
   });
 
+  // Track mouse history for throw velocity
+  document.addEventListener('mousemove',e=>{
+    _mhist.push({x:e.clientX,y:e.clientY,t:performance.now()});
+    if(_mhist.length>8)_mhist.shift();
+    if(!_active)return;
+    _items.forEach(p=>{
+      if(!p.dragging)return;
+      p.x=e.clientX-p.grabOffX;
+      p.y=e.clientY-p.grabOffY;
+      p.el.style.left=p.x+'px';
+      p.el.style.top=p.y+'px';
+    });
+  });
+
+  document.addEventListener('mouseup',()=>{
+    if(!_active)return;
+    // Calculate throw velocity from mouse history
+    let tvx=0,tvy=0;
+    if(_mhist.length>=2){
+      const a=_mhist[Math.max(0,_mhist.length-4)];
+      const b=_mhist[_mhist.length-1];
+      const dt=Math.max(1,(b.t-a.t));
+      tvx=(b.x-a.x)/dt*16;
+      tvy=(b.y-a.y)/dt*16;
+    }
+    _items.forEach(p=>{
+      if(!p.dragging)return;
+      p.dragging=false;
+      p.vx=tvx;p.vy=tvy;
+      p.rotV=tvx*0.4;
+      p.el.style.cursor='grab';
+      p.el.style.boxShadow='none';
+      p.el.style.transform=`rotate(${p.rot}deg) scale(1)`;
+    });
+  });
+
   function _launch(){
     _active=true;
-    // Toast message
+    // Toast
     const toast=document.createElement('div');
     toast.style.cssText='position:fixed;top:76px;left:50%;transform:translateX(-50%) scale(0);background:#00C896;color:#0D0F14;padding:10px 22px;border-radius:20px;font-family:Outfit,sans-serif;font-weight:700;font-size:14px;z-index:10001;pointer-events:none;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;';
-    toast.textContent='🎮 Chaos mode! Grab and throw!';
+    toast.textContent='🎮 Chaos mode! Grab and throw the buttons!';
     document.body.appendChild(toast);
-    requestAnimationFrame(()=>{toast.style.transform='translateX(-50%) scale(1)';});
-    setTimeout(()=>{toast.style.transform='translateX(-50%) scale(0)';setTimeout(()=>toast.remove(),300);},2600);
+    requestAnimationFrame(()=>toast.style.transform='translateX(-50%) scale(1)');
+    setTimeout(()=>{toast.style.transform='translateX(-50%) scale(0)';setTimeout(()=>toast.remove(),300);},3000);
 
-    // Grab all landing page buttons
+    // Capture ALL visible buttons
     const landing=document.getElementById('screen-landing');
-    const btns=[...landing.querySelectorAll('button')];
+    const btns=[...landing.querySelectorAll('button')].filter(b=>{
+      const r=b.getBoundingClientRect();
+      return r.width>0&&r.height>0&&r.top>-200&&r.top<window.innerHeight+200;
+    });
 
-    btns.forEach(btn=>{
+    btns.forEach((btn,i)=>{
       const rect=btn.getBoundingClientRect();
-      if(rect.width===0)return;
-
+      const cs=getComputedStyle(btn);
       const el=document.createElement('button');
-      el.className=btn.className+' lp-egg-btn';
       el.textContent=btn.textContent;
       el.style.cssText=`
-        position:fixed;
-        left:${rect.left}px;top:${rect.top}px;
+        position:fixed;left:${rect.left}px;top:${rect.top}px;
         width:${rect.width}px;height:${rect.height}px;
         margin:0;z-index:9999;cursor:grab;
-        transition:box-shadow .15s;
-        border-radius:${getComputedStyle(btn).borderRadius};
-        background:${getComputedStyle(btn).background};
-        color:${getComputedStyle(btn).color};
-        font-family:${getComputedStyle(btn).fontFamily};
-        font-size:${getComputedStyle(btn).fontSize};
-        font-weight:${getComputedStyle(btn).fontWeight};
-        border:${getComputedStyle(btn).border};
-        pointer-events:auto;
-        user-select:none;
-      `;
+        border-radius:${cs.borderRadius};background:${cs.background};
+        color:${cs.color};font-family:${cs.fontFamily};
+        font-size:${cs.fontSize};font-weight:${cs.fontWeight};
+        border:${cs.border};padding:${cs.padding};
+        pointer-events:auto;user-select:none;will-change:transform,left,top;
+        transform-origin:center center;`;
       document.body.appendChild(el);
       btn.style.visibility='hidden';
 
-      const p={el,x:rect.left,y:rect.top,w:rect.width,h:rect.height,
-        vx:(Math.random()-.5)*10,vy:-Math.random()*8-2,
-        dragging:false,lastMX:0,lastMY:0,dvx:0,dvy:0,rot:0,rotV:(Math.random()-.5)*4};
-      _items.push(p);
+      const p={
+        el,x:rect.left,y:rect.top,w:rect.width,h:rect.height,
+        vx:(Math.random()-.5)*14,vy:-Math.random()*10-3,
+        rot:0,rotV:(Math.random()-.5)*6,
+        dragging:false,grabOffX:0,grabOffY:0
+      };
+      // Stagger launch
+      setTimeout(()=>_items.push(p),i*40);
 
       el.addEventListener('mousedown',e=>{
-        p.dragging=true;p.lastMX=e.clientX;p.lastMY=e.clientY;
-        p.vx=0;p.vy=0;p.dvx=0;p.dvy=0;
+        p.dragging=true;
+        p.grabOffX=e.clientX-p.x;
+        p.grabOffY=e.clientY-p.y;
+        p.vx=0;p.vy=0;p.rotV=0;
         el.style.cursor='grabbing';
-        el.style.boxShadow='0 8px 32px rgba(0,200,150,.35)';
-        el.style.transform='scale(1.08)';
-        e.preventDefault();
+        el.style.boxShadow='0 12px 40px rgba(0,200,150,.4)';
+        el.style.transform=`rotate(${p.rot}deg) scale(1.1)`;
+        _mhist.length=0;
+        e.preventDefault();e.stopPropagation();
       });
     });
 
-    // Global drag handlers
-    const onMove=e=>{
-      _items.forEach(p=>{
-        if(!p.dragging)return;
-        p.dvx=e.clientX-p.lastMX;p.dvy=e.clientY-p.lastMY;
-        p.x+=p.dvx;p.y+=p.dvy;
-        p.lastMX=e.clientX;p.lastMY=e.clientY;
-        p.el.style.left=p.x+'px';p.el.style.top=p.y+'px';
-      });
-    };
-    const onUp=()=>{
-      _items.forEach(p=>{
-        if(!p.dragging)return;
-        p.dragging=false;
-        p.vx=p.dvx*2.5;p.vy=p.dvy*2.5;
-        p.el.style.cursor='grab';
-        p.el.style.boxShadow='none';
-        p.el.style.transform='none';
-      });
-    };
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onUp);
-
-    // Touch support
-    const onTouchMove=e=>{
-      const t=e.touches[0];
-      _items.forEach(p=>{
-        if(!p.dragging)return;
-        p.dvx=t.clientX-p.lastMX;p.dvy=t.clientY-p.lastMY;
-        p.x+=p.dvx;p.y+=p.dvy;
-        p.lastMX=t.clientX;p.lastMY=t.clientY;
-        p.el.style.left=p.x+'px';p.el.style.top=p.y+'px';
-      });
-      e.preventDefault();
-    };
-    document.addEventListener('touchmove',onTouchMove,{passive:false});
-
-    // Physics loop
-    const gravity=0.45,bounce=0.52,friction=0.974,rotFric=0.95;
-    function loop(){
+    // Physics loop — single rAF, no per-item rAF
+    const G=0.5,BOUNCE=0.55,FRIC=0.973,RFRIC=0.93;
+    let prev=performance.now();
+    function loop(now){
       if(!_active)return;
+      const dt=Math.min((now-prev)/16,3);prev=now;
       const vw=window.innerWidth,vh=window.innerHeight;
-      _items.forEach(p=>{
-        if(p.dragging){_raf=requestAnimationFrame(loop);return;}
-        p.vy+=gravity;p.vx*=friction;p.vy*=0.9995;
-        p.x+=p.vx;p.y+=p.vy;
-        p.rotV*=rotFric;p.rot+=p.rotV;
-        // Floor
-        if(p.y+p.h>=vh){p.y=vh-p.h;p.vy*=-bounce;p.vx*=0.8;p.rotV*=0.6;if(Math.abs(p.vy)<0.8)p.vy=0;}
-        // Ceiling
-        if(p.y<=0){p.y=0;p.vy*=-bounce;}
-        // Walls
-        if(p.x+p.w>=vw){p.x=vw-p.w;p.vx*=-bounce;p.rotV*=-0.5;}
-        if(p.x<=0){p.x=0;p.vx*=-bounce;p.rotV*=-0.5;}
+      let dirty=false;
+      for(const p of _items){
+        if(p.dragging)continue;
+        dirty=true;
+        p.vy+=G*dt;p.vx*=Math.pow(FRIC,dt);
+        p.x+=p.vx*dt;p.y+=p.vy*dt;
+        p.rotV*=Math.pow(RFRIC,dt);p.rot+=p.rotV*dt;
+        if(p.y+p.h>=vh){p.y=vh-p.h;p.vy*=-BOUNCE;p.vx*=0.82;p.rotV*=0.55;if(Math.abs(p.vy)<1)p.vy=0;}
+        if(p.y<0){p.y=0;p.vy*=-BOUNCE;}
+        if(p.x+p.w>=vw){p.x=vw-p.w;p.vx*=-BOUNCE;p.rotV*=-0.6;}
+        if(p.x<0){p.x=0;p.vx*=-BOUNCE;p.rotV*=-0.6;}
         p.el.style.left=p.x+'px';p.el.style.top=p.y+'px';
         p.el.style.transform=`rotate(${p.rot}deg)`;
-      });
-      _raf=requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
     }
-    _raf=requestAnimationFrame(loop);
+    requestAnimationFrame(loop);
   }
 })();
 
