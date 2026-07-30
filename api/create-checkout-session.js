@@ -1,8 +1,12 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const PRICE_IDS = {
-  monthly: 'price_1TxZWw1MGxEsTGnjwZWRSE0I',
-  annual:  'price_1TxZWw1MGxEsTGnjrka4QHeP',
+  // Test mode prices (switch to live when done testing)
+  monthly: 'price_1TxaxB1MGxEsTGnjUrEkssq2',
+  annual:  'price_1Txaxx1MGxEsTGnjp9llMQu9',
+  // Live mode prices (uncomment and swap sk_live_ key when ready)
+  // monthly: 'price_1TxZWw1MGxEsTGnjwZWRSE0I',
+  // annual:  'price_1TxZWw1MGxEsTGnjrka4QHeP',
 };
 
 module.exports = async (req, res) => {
@@ -31,7 +35,7 @@ module.exports = async (req, res) => {
         },
       },
       customer_email: email || undefined,
-      success_url: `https://networth.ink/?payment=success&plan=${plan}`,
+      success_url: `https://networth.ink/?payment=success&plan=${plan}&customer={CHECKOUT_SESSION_ID}`,
       cancel_url:  `https://networth.ink/`,
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
