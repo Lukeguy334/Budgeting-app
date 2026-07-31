@@ -433,6 +433,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 @keyframes nw-spin-logo{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes nw-pulse{from{box-shadow:0 0 20px rgba(0,200,150,.3)}to{box-shadow:0 0 60px rgba(0,200,150,.8)}}
 @keyframes nw-progress-fill{from{width:0}to{width:100%}}
+@keyframes nw-nuke-blink{0%,100%{opacity:1}50%{opacity:.25}}
 .nw-shaking{animation:nw-shake .35s ease-out;}
 .lp-nav-logo{display:flex;align-items:center;gap:10px;}
 .lp-nav-actions{display:flex;align-items:center;gap:12px;}
@@ -2724,12 +2725,12 @@ function importData(event){
   let _magnetMode=false,_freezeMode=false,_tornadoMode=false,_rainbowMode=false;
   let _windX=0,_windY=0,_earthquake=0;
   let _blackHoles=[]; // array of {x,y,el,ring,t,maxT}
-  let _nuked=false;
+  let _nuked=false,_nukeCoverOpen=false,_nukeCoverTimer=null;
   let _rainbowT=0;
 
   // Cleanup — called when leaving the landing page
   window._eggCleanup=function(){
-    _active=false;_items=[];_bombs=[];_blackHoles=[];_nuked=false;
+    _active=false;_items=[];_bombs=[];_blackHoles=[];_nuked=false;_nukeCoverOpen=false;clearTimeout(_nukeCoverTimer);
     _magnetMode=false;_freezeMode=false;_tornadoMode=false;_rainbowMode=false;
     _windX=0;_windY=0;_earthquake=0;_gravMode=0;_blackHole=null;
     document.querySelectorAll('.nw-egg-el').forEach(el=>el.remove());
@@ -2760,7 +2761,8 @@ function importData(event){
       case 'KeyE':      _triggerEarthquake();break;
       case 'KeyC':      _dropConfetti();break;
       case 'ArrowUp':   e.preventDefault();_launchAll();break;
-      case 'KeyN':      if(!_nuked)_nuke();break;
+      case 'KeyN':      _nuke();break;
+      case 'KeyL':      _liftNukeCover();break;
     }
   });
 
@@ -2789,9 +2791,15 @@ function importData(event){
     }
     for(const p of _items){
       if(!p.dragging)continue;
-      p.dragging=false;p.vx=tvx;p.vy=tvy;p.rotV=tvx*0.35;
-      p.el.style.cursor='grab';
-      p.el.style.boxShadow='none';
+      p.dragging=false;
+      if(_freezeMode){
+        // Store throw velocity — released when freeze is toggled off
+        p.frozenVx=tvx;p.frozenVy=tvy;p.frozenRotV=tvx*0.35;
+        p.vx=0;p.vy=0;p.rotV=0;
+      }else{
+        p.vx=tvx;p.vy=tvy;p.rotV=tvx*0.35;
+      }
+      p.el.style.cursor='grab';p.el.style.boxShadow='none';
       p.el.style.transform=`rotate(${p.rot}deg) scale(1)`;
     }
   });
@@ -2939,8 +2947,14 @@ function importData(event){
 <div><span style="color:#F0EDE6">T</span> Tornado &nbsp; <span style="color:#F0EDE6">R</span> Rainbow</div>
 <div><span style="color:#F0EDE6">E</span> Earthquake &nbsp; <span style="color:#F0EDE6">C</span> Confetti</div>
 <div><span style="color:#F0EDE6">↑</span> Launch all up</div>
-<div style="color:#F87171"><span style="color:#F87171">N</span> ☢️ NUKE EVERYTHING</div>
-<div style="color:#4A5568;margin-top:4px;font-size:10px;">Shift+R to reset page</div>
+<div style="margin-top:8px;padding-top:8px;border-top:1px solid #232A3A;">
+  <div style="position:relative;display:inline-block;width:100%;">
+    <div id="nw-nuke-btn" style="background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.5);border-radius:6px;padding:7px 10px;font-size:11px;color:#F87171;font-weight:700;text-align:center;user-select:none;">☢️ PRESS N TO NUKE</div>
+    <div id="nw-nuke-lid" style="position:absolute;inset:0;background:rgba(28,33,48,.95);border:1.5px solid rgba(248,113,113,.6);border-radius:6px;display:flex;align-items:center;justify-content:center;transform-origin:top center;transition:transform .45s cubic-bezier(.4,0,.2,1),opacity .45s;cursor:pointer;font-size:10px;color:#F87171;font-weight:700;letter-spacing:.05em;" onclick="_liftNukeCover()">⚠️ ARMED — PRESS L</div>
+  </div>
+  <div style="font-size:9px;color:#4A5568;margin-top:5px;text-align:center;">L lifts cover · 5s window · N detonates</div>
+</div>
+<div style="color:#4A5568;margin-top:6px;font-size:10px;">Shift+R to restore page</div>
 <div id="nw-hud-status" style="color:#00C896;margin-top:6px;min-height:16px;"></div>`;
     document.body.appendChild(hud);
   }
@@ -3010,8 +3024,17 @@ function importData(event){
   }
   function _toggleFreeze(){
     _freezeMode=!_freezeMode;
-    _toast(_freezeMode?'🧊 Everything frozen!':'🔥 Unfrozen!');
-    _hudStatus(_freezeMode?'🧊 Frozen':'');
+    if(!_freezeMode){
+      // Release stored throw velocities
+      for(const p of _items){
+        if(p.frozenVx!==undefined){
+          p.vx=p.frozenVx;p.vy=p.frozenVy;p.rotV=p.frozenRotV||0;
+          delete p.frozenVx;delete p.frozenVy;delete p.frozenRotV;
+        }
+      }
+    }
+    _toast(_freezeMode?'🧊 Freeze! Grab & place buttons — unfreeze to launch!':'🔥 Unfreeze! Stored throws released!');
+    _hudStatus(_freezeMode?'🧊 Frozen — throw velocity stored':'');
   }
   function _toggleTornado(){
     _tornadoMode=!_tornadoMode;
@@ -3039,7 +3062,7 @@ function importData(event){
     for(const p of _items){p.vy=-(Math.random()*18+10);p.vx=(Math.random()-.5)*12;p.rotV=(Math.random()-.5)*10;}
     _toast('🚀 Launch!');
   }
-  const CONF_MAX=180;
+  const CONF_MAX=300;
   function _dropConfetti(){
     const colors=['#00C896','#60A5FA','#F5A623','#F87171','#A78BFA','#FFE066','#FF69B4','#00E5FF'];
     // Cull oldest confetti to stay within CONF_MAX
@@ -3063,7 +3086,7 @@ function importData(event){
         _items.push({el,x,y:-20,w:size,h:size,
           vx:(Math.random()-.5)*5,vy:Math.random()*3+1,
           rot:Math.random()*360,rotV:(Math.random()-.5)*10,
-          dragging:false,grabOffX:0,grabOffY:0,isConfetti:true,life:480});
+          dragging:false,grabOffX:0,grabOffY:0,isConfetti:true,life:720});
       },i*35);
     }
     _toast('🎊 Confetti!');
@@ -3098,10 +3121,96 @@ function importData(event){
     },350);
   }
 
+  // ── NUKE COVER ──
+  function _liftNukeCover(){
+    if(_nuked)return;
+    if(_nukeCoverOpen){_closeNukeCover();return;}
+    const lid=document.getElementById('nw-nuke-lid');
+    if(!lid)return;
+    lid.style.transform='perspective(150px) rotateX(-115deg) translateY(-8px)';
+    lid.style.opacity='.25';
+    _nukeCoverOpen=true;
+    _toast('🔓 Cover open — press N within 5 seconds!');
+    _nudNukeBlink();
+    _nukeCoverTimer=setTimeout(()=>{
+      if(_nukeCoverOpen&&!_nuked){_closeNukeCover();_toast('💨 Cover closed — too slow!');}
+    },5000);
+  }
+  function _closeNukeCover(){
+    const lid=document.getElementById('nw-nuke-lid');
+    if(lid){lid.style.transform='';lid.style.opacity='1';}
+    _nukeCoverOpen=false;clearTimeout(_nukeCoverTimer);
+    const btn=document.getElementById('nw-nuke-btn');
+    if(btn)btn.style.animation='';
+  }
+  function _nudNukeBlink(){
+    const btn=document.getElementById('nw-nuke-btn');
+    if(btn)btn.style.animation='nw-nuke-blink .4s linear infinite';
+  }
+
   // ── NUKE ──
   function _nuke(){
-    if(!_active)return;
-    _toast('☢️ NUKE INCOMING…');
+    if(_nuked){return;}
+    if(!_nukeCoverOpen){_toast('🔒 Lift the cover first! Press L');return;}
+    _nuked=true;_nukeCoverOpen=false;clearTimeout(_nukeCoverTimer);
+    // Permanently grey the cover
+    const lid=document.getElementById('nw-nuke-lid');
+    if(lid){lid.style.transform='perspective(150px) rotateX(-115deg) translateY(-8px)';lid.style.opacity='.15';lid.style.background='#1a1a1a';lid.style.borderColor='#333';}
+    const hudEl=document.getElementById('nw-hud');
+    if(hudEl){[...hudEl.querySelectorAll('*')].forEach(el=>{if(el.textContent.includes('NUKE')){el.style.opacity='.3';el.style.textDecoration='line-through';}});}
+    // Red siren overlay
+    const siren=document.createElement('div');siren.className='nw-egg-el';
+    siren.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9990;';
+    document.body.appendChild(siren);
+    let sirenOn=false;
+    const sirenIv=setInterval(()=>{siren.style.background=sirenOn?'':'rgba(248,113,113,.1)';sirenOn=!sirenOn;},180);
+    // Countdown overlay
+    const cEl=document.createElement('div');cEl.className='nw-egg-el';
+    cEl.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Outfit,sans-serif;font-size:130px;font-weight:900;color:#F87171;text-shadow:0 0 60px rgba(248,113,113,.9);z-index:9992;pointer-events:none;transition:transform .15s,opacity .3s;user-select:none;';
+    cEl.textContent='3';document.body.appendChild(cEl);
+    // Warning text
+    const warn=document.createElement('div');warn.className='nw-egg-el';
+    warn.style.cssText='position:fixed;top:calc(50% + 90px);left:50%;transform:translateX(-50%);font-family:Outfit,sans-serif;font-size:16px;font-weight:700;color:#F87171;letter-spacing:.15em;z-index:9992;pointer-events:none;animation:nw-nuke-blink .5s linear infinite;';
+    warn.textContent='☢️ NUCLEAR DETONATION SEQUENCE ☢️';document.body.appendChild(warn);
+    let count=3;
+    const cdIv=setInterval(()=>{
+      count--;
+      if(count>0){
+        cEl.textContent=count;
+        cEl.style.transform='translate(-50%,-55%) scale(1.25)';
+        setTimeout(()=>cEl.style.transform='translate(-50%,-50%) scale(1)',150);
+      }else{
+        clearInterval(cdIv);clearInterval(sirenIv);
+        cEl.textContent='☢️';cEl.style.fontSize='90px';
+        warn.textContent='DETONATING…';
+        setTimeout(()=>{
+          cEl.remove();warn.remove();siren.remove();
+          _dropNukeBomb();
+        },600);
+      }
+    },1000);
+    _hudStatus('☢️ DETONATION SEQUENCE INITIATED');
+  }
+
+  function _dropNukeBomb(){
+    const vw=window.innerWidth,vh=window.innerHeight;
+    const bombEl=document.createElement('div');bombEl.className='nw-egg-el';
+    bombEl.style.cssText=`position:fixed;left:${vw/2-60}px;top:-140px;font-size:110px;line-height:1;
+      z-index:10000;pointer-events:none;filter:drop-shadow(0 10px 30px rgba(0,0,0,.9));`;
+    bombEl.textContent='💣';document.body.appendChild(bombEl);
+    let y=-140,vy=3,wobble=0;
+    const fallIv=setInterval(()=>{
+      vy+=0.9;y+=vy;wobble+=0.15;
+      bombEl.style.top=y+'px';
+      bombEl.style.transform=`rotate(${Math.sin(wobble)*4}deg) scale(${1+vy*0.01})`;
+      if(y>=vh-150){
+        clearInterval(fallIv);bombEl.remove();
+        _executeNuke();
+      }
+    },16);
+  }
+
+  function _executeNuke(){
     const landing=document.getElementById('screen-landing');
     // White flash
     const flash=document.createElement('div');flash.className='nw-egg-el';
@@ -3202,7 +3311,6 @@ function importData(event){
           vx:0,vy:-8,rot:0,rotV:0,dragging:false,grabOffX:0,grabOffY:0,isDebris:true});
       }
     },120);
-    _nuked=true;
     _hudStatus('☢️ NUKED — Shift+R to reset');
     // Grey N in HUD
     const hudEl=document.getElementById('nw-hud');
@@ -3221,6 +3329,30 @@ function importData(event){
     setTimeout(_showHUD,600);
 
     const landing=document.getElementById('screen-landing');
+        // Capture all buttons EXCEPT last 2 — they stay until a bomb hits
+    const _allBtns=[...landing.querySelectorAll('button')].filter(b=>{const r=b.getBoundingClientRect();return r.width>0&&r.height>0;});
+    const _fallBtns=_allBtns.slice(0,Math.max(0,_allBtns.length-2));
+    _fallBtns.forEach((btn,si)=>{
+      const rect=btn.getBoundingClientRect();const cs=getComputedStyle(btn);
+      const el=document.createElement('button');el.className='nw-egg-el';el.textContent=btn.textContent;
+      el.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;
+        width:${rect.width}px;height:${rect.height}px;margin:0;z-index:9999;cursor:grab;
+        border-radius:${cs.borderRadius};background:${cs.background};color:${cs.color};
+        font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};
+        border:${cs.border};padding:${cs.padding};pointer-events:auto;user-select:none;`;
+      document.body.appendChild(el);btn.style.visibility='hidden';
+      const p={el,x:rect.left,y:rect.top,w:rect.width,h:rect.height,
+        vx:(Math.random()-.5)*12,vy:-Math.random()*8-2,
+        rot:0,rotV:(Math.random()-.5)*6,dragging:false,grabOffX:0,grabOffY:0};
+      setTimeout(()=>{if(_active)_items.push(p);},si*60);
+      el.addEventListener('mousedown',e=>{
+        p.dragging=true;p.grabOffX=e.clientX-p.x;p.grabOffY=e.clientY-p.y;
+        p.vx=0;p.vy=0;p.rotV=0;_mhist.length=0;
+        el.style.cursor='grabbing';el.style.boxShadow='0 12px 40px rgba(0,200,150,.45)';
+        el.style.transform=`rotate(${p.rot}deg) scale(1.1)`;
+        e.preventDefault();e.stopPropagation();
+      });
+    });
     const BOUNCE=0.55,FRIC=0.973,RFRIC=0.93,BASE_G=0.5;
     let prev=performance.now();
     function loop(now){
