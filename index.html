@@ -34,6 +34,11 @@
   --accent:#00C896;--accent-dim:#0D2E22;
   --good:#00C896;--caution:#F5A623;--danger:#F87171;--purple:#A78BFA;--blue:#60A5FA;
 }
+[data-theme="light"]{
+  --bg:#F0F2F7;--surface:#FFFFFF;--surface2:#E8ECF4;--border:#D1D9E6;
+  --text:#1A202C;--muted:#64748B;--accent:#00A87A;--accent-dim:#D1FAF0;
+  --good:#059669;--danger:#DC2626;--caution:#D97706;--blue:#2563EB;--purple:#7C3AED;
+}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
 .screen{display:none;min-height:100vh;}
 .screen.active{display:flex;flex-direction:column;}
@@ -546,6 +551,27 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   .lp-final-cta{padding:56px 18px;}
   .lp-final-cta h2{font-size:26px!important;}
 }
+
+/* ── TOUR ── */
+.tour-overlay{position:fixed;inset:0;z-index:19000;pointer-events:all;}
+.tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:19001;}
+.tour-spotlight{position:fixed;z-index:19002;border-radius:10px;
+  box-shadow:0 0 0 4px var(--accent),0 0 0 9999px rgba(0,0,0,.65);
+  pointer-events:none;transition:all .35s cubic-bezier(.4,0,.2,1);}
+.tour-card{position:fixed;z-index:19003;background:var(--surface);border:1px solid var(--accent);
+  border-radius:14px;padding:20px 22px;max-width:300px;min-width:240px;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.tour-step-label{font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--accent);margin-bottom:6px;text-transform:uppercase;}
+.tour-title{font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;}
+.tour-desc{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:16px;}
+.tour-actions{display:flex;align-items:center;justify-content:space-between;}
+.tour-dots{display:flex;gap:5px;}
+.tour-dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
+.tour-dot.active{background:var(--accent);}
+.tour-btn-row{display:flex;gap:8px;}
+.tour-btn{padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);}
+.tour-btn.primary{background:var(--accent);color:#0D0F14;border-color:transparent;}
+.tour-skip{font-size:11px;color:var(--muted);cursor:pointer;padding:4px;text-decoration:underline;text-underline-offset:3px;}
 </style>
 </head>
 <body>
@@ -1064,18 +1090,18 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
     <div class="page-heading"><h1>NetWorth · Budget</h1><h2>Where does your money go?</h2></div>
 
     <!-- Income display (read-only) -->
-    <div class="income-display-card">
+    <div class="income-display-card" id="income-display-card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
         <div style="display:flex;align-items:center;gap:8px;">
           <span id="budget-state-badge" class="state-badge">FL</span>
           <span style="font-size:11px;color:var(--muted);">Tax state — change in Settings</span>
         </div>
-        <div style="font-size:11px;color:var(--muted);" id="adj-headline"></div>
+        <div style="display:flex;align-items:center;gap:8px;"><div style="font-size:11px;color:var(--muted);" id="adj-headline"></div><div style="font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:2px 7px;white-space:nowrap;">↻ Resets monthly</div></div>
       </div>
       <div class="income-display-row">
         <div class="income-stat"><div class="income-stat-label">Benefits deducted</div><div class="income-stat-val" id="d-benefits">—</div></div>
         <div class="income-stat"><div class="income-stat-label">Federal + FICA</div><div class="income-stat-val" id="d-fed-tax">—</div></div>
-        <div class="income-stat" id="d-state-wrap"><div class="income-stat-label">State tax</div><div class="income-stat-val" id="d-state-tax">—</div></div>
+        <div class="income-stat" id="d-state-wrap"><div class="income-stat-label" id="d-state-label">State tax</div><div class="income-stat-val" id="d-state-tax">—</div></div>
         <div class="income-stat"><div class="income-stat-label">Base take-home</div><div class="income-stat-val" id="d-base-home">—</div></div>
         <div class="income-stat"><div class="income-stat-label">Adjustments</div><div class="income-stat-val" id="d-adj">—</div></div>
         <div class="income-stat"><div class="income-stat-label">Monthly take-home</div><div class="income-stat-val accent" id="d-net">—</div></div>
@@ -1156,7 +1182,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
     <div id="loan-budget-items"></div>
 
     <!-- Savings -->
-    <div class="savings-card">
+    <div class="savings-card" id="savings-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,200,150,.7);">Monthly Savings</div>
+        <button onclick="logMonthEndSavings()" style="font-size:11px;padding:4px 11px;border-radius:8px;background:rgba(0,200,150,.12);border:1px solid rgba(0,200,150,.3);color:var(--accent);cursor:pointer;font-weight:600;">📅 Log month end</button>
+      </div>
       <div class="savings-top">
         <div class="savings-left">
           <div class="savings-label">💰 Monthly savings</div>
@@ -1182,7 +1212,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
     <div class="page-heading"><h1>NetWorth · Expenses</h1><h2>Track your actual spending</h2></div>
     <div class="log-form-card">
       <h3>➕ Log an expense</h3>
-      <div class="log-form-row">
+      <div class="log-form-row" id="log-form">
         <div class="log-field amount-field"><label>Amount</label><div class="log-amount-wrap"><span class="log-prefix">$</span><input type="number" id="log-amount" placeholder="0.00" min="0" step="0.01"></div></div>
         <div class="log-field desc-field"><label>Description</label><input type="text" id="log-desc" placeholder="e.g. Publix run"></div>
         <div class="log-field cat-field"><label>Category</label><select id="log-cat"></select></div>
@@ -1305,7 +1335,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   </div>
 
   <!-- SETTINGS TAB -->
-  <div class="tab-page" id="tab-settings">
+  <div class="tab-page" id="tab-settings" style="position:relative;">
     <div class="page-heading"><h1>NetWorth · Settings</h1><h2>Profile &amp; preferences</h2></div>
 
     <div class="settings-section">
@@ -1354,6 +1384,27 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
       </div>
       <div class="settings-field"><label>Protected / sick hours per year</label><input type="number" id="set-pto-protected" placeholder="40"></div>
       <button class="btn-save" onclick="savePTOSettings()">Save PTO Settings</button>
+    </div>
+
+    <div class="settings-section" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+      <div>
+        <h3 style="margin-bottom:4px;">🎨 Appearance</h3>
+        <div style="font-size:12px;color:var(--muted);">Theme and tour</div>
+      </div>
+      <button class="btn-save" onclick="startTour()" style="white-space:nowrap;flex-shrink:0;">🗺️ Take Tour</button>
+    </div>
+    <div class="settings-section">
+      <h3>🎨 Theme</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+        <div>
+          <div style="font-size:13px;font-weight:500;">Theme</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Dark is the default</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="theme-btn" id="theme-dark-btn" onclick="setTheme('dark')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">🌙 Dark</button>
+          <button class="theme-btn" id="theme-light-btn" onclick="setTheme('light')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">☀️ Light</button>
+        </div>
+      </div>
     </div>
 
     <div class="settings-section">
@@ -1979,6 +2030,83 @@ function scoreSavings(pct){
 // APP INIT
 // ═══════════════════════════════════════════════════════════
 
+function checkAdjustmentsMonth(){
+  const now=new Date();
+  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  if(!user.profile.adjustmentsMonth){
+    user.profile.adjustmentsMonth=thisMonth;saveUser();return;
+  }
+  if(user.profile.adjustmentsMonth!==thisMonth){
+    if(user.data.adjustments&&user.data.adjustments.length>0){
+      user.data.adjustments=[];
+      user.profile.adjustmentsMonth=thisMonth;
+      saveUser();
+      setTimeout(()=>showToast('↻ New month — income adjustments have been reset.','info'),800);
+    } else {
+      user.profile.adjustmentsMonth=thisMonth;saveUser();
+    }
+  }
+}
+
+function showToast(msg,type='info'){
+  const t=document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(40px);
+    background:${type==='good'?'var(--good)':type==='danger'?'var(--danger)':'var(--surface2)'};
+    color:${type==='good'||type==='danger'?'#fff':'var(--text)'};
+    border:1px solid var(--border);border-radius:20px;padding:10px 20px;font-size:13px;
+    z-index:9000;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;
+    box-shadow:0 4px 20px rgba(0,0,0,.3);white-space:nowrap;max-width:90vw;text-align:center;`;
+  t.textContent=msg;document.body.appendChild(t);
+  requestAnimationFrame(()=>{t.style.transform='translateX(-50%) translateY(0)';t.style.opacity='1';});
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)';setTimeout(()=>t.remove(),300);},3200);
+}
+
+function checkEndOfMonth(){
+  // Show end-of-month prompt on last 2 days of month
+  const now=new Date();const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  if(now.getDate()<lastDay-1)return;
+  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  if(user.profile.eomPromptShown===thisMonth)return;
+  setTimeout(()=>{
+    if(confirm('📅 Month ending soon! Would you like to log this month\'s savings now?\n\nThis will calculate: take-home − actual logged expenses this month.')){
+      logMonthEndSavings();user.profile.eomPromptShown=thisMonth;saveUser();
+    } else {user.profile.eomPromptShown=thisMonth;saveUser();}
+  },1500);
+}
+
+function logMonthEndSavings(){
+  const now=new Date();
+  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  // Actual logged expenses this month
+  const actualSpent=(user.data.logs||[])
+    .filter(l=>l.date&&l.date.startsWith(thisMonth))
+    .reduce((s,l)=>s+(l.amount||0),0);
+  // Monthly take-home (with adjustments)
+  const gross=getSalary();const gm=gross/12;
+  const bm=calcBenefitsMonthly(gm);
+  const taxableGross=Math.max(0,gross-bm*12);
+  const{netAnnual}=calcTax(taxableGross);
+  const baseMonthly=netAnnual/12;
+  const{net:adjNet}=getNetAdjustment();
+  const mNet=baseMonthly+adjNet;
+  const actualSavings=mNet-actualSpent;
+  const isOver=actualSavings<0;
+  const label=isOver?`Over budget — ${thisMonth}`:`Month end savings — ${thisMonth}`;
+  // Log to first active savings goal
+  const goals=getActiveGoals();
+  if(!goals.length){showToast('No savings goals set up yet.','info');return;}
+  user.data.savingsLogs.unshift({
+    id:Date.now(),
+    amount:Math.abs(actualSavings),
+    desc:label,
+    catId:goals[0].id,
+    date:new Date().toISOString().slice(0,10),
+    type:isOver?'withdrawal':'contribution'
+  });
+  saveUser();renderSavingsLog();
+  showToast(isOver?`⚠️ Over budget by ${fmt(Math.abs(actualSavings))} logged.`:`✅ ${fmt(actualSavings)} savings logged for ${thisMonth}`,'good');
+}
+
 function initApp(){
   showScreen('app');
   const p=user.profile;
@@ -1998,9 +2126,14 @@ function initApp(){
   renderAdjustments();
   const today=new Date().toISOString().slice(0,10);
   ['log-date','sl-date','ats-date','pto-start','pto-end'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
+  applyTheme();
   updateBudgetStateBadge();
+  checkAdjustmentsMonth();
+  // Auto-start tour for first-time users
+  if(!user.profile.tourSeen){setTimeout(startTour,800);}
   recalcBudget();
   updateSubscriptionBadge();
+  checkEndOfMonth();
 }
 
 function updateBudgetStateBadge(){
@@ -2150,7 +2283,9 @@ function recalcBudget(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   set('d-benefits',gross?fmt(bm)+'/mo':'—');
   set('d-fed-tax',gross?fmt((fedTaxAnnual+ficaAnnual)/12)+'/mo':'—');
-  set('d-state-tax',gross?(stateTaxAnnual>0?fmt(stateTaxAnnual/12)+'/mo':'$0 · no state tax'):'—');
+  set('d-state-tax',gross?(stateTaxAnnual>0?fmt(stateTaxAnnual/12)+'/mo':'$0/mo'):'—');
+  const slEl=document.getElementById('d-state-label');
+  if(slEl)slEl.innerHTML=gross&&stateTaxAnnual===0?'State tax <span style="color:var(--good);font-size:9px;font-weight:600;vertical-align:middle;">✓ EXEMPT</span>':'State tax';
   set('d-base-home',gross?fmt(baseMonthly)+'/mo':'—');
   const adjEl=document.getElementById('d-adj');
   if(adjEl){adjEl.textContent=gross?(adjNet===0?'$0':(adjNet>0?'+':'')+fmt(adjNet)+'/mo'):'—';adjEl.style.color=adjNet>0?'var(--good)':adjNet<0?'var(--danger)':'var(--text)';}
@@ -2234,7 +2369,11 @@ function showTab(name){
   if(name==='alltime')renderAllTime();
   if(name==='loans')renderLoans();
   if(name==='pto')renderPTO();
-  if(name==='settings')buildSettingsCatsGrid();
+  if(name==='settings'){buildSettingsCatsGrid();const t=user.profile.theme||'dark';
+    const db=document.getElementById('theme-dark-btn');const lb=document.getElementById('theme-light-btn');
+    if(db){db.style.background=t==='dark'?'var(--accent)':'var(--surface2)';db.style.color=t==='dark'?'#0D0F14':'var(--text)';}
+    if(lb){lb.style.background=t==='light'?'var(--accent)':'var(--surface2)';lb.style.color=t==='light'?'#fff':'var(--text)';}
+  }
 }
 
 function buildMonthFilter(id){
@@ -2694,6 +2833,19 @@ function saveCategories(){
   alert('✅ Categories updated.');
 }
 
+function setTheme(t){
+  user.profile.theme=t;
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('theme-dark-btn').style.background=t==='dark'?'var(--accent)':'var(--surface2)';
+  document.getElementById('theme-dark-btn').style.color=t==='dark'?'#0D0F14':'var(--text)';
+  document.getElementById('theme-light-btn').style.background=t==='light'?'var(--accent)':'var(--surface2)';
+  document.getElementById('theme-light-btn').style.color=t==='light'?'#fff':'var(--text)';
+  saveUser();
+}
+function applyTheme(){
+  const t=user.profile.theme||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+}
 function exportData(){
   const blob=new Blob([JSON.stringify(user.data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -3654,6 +3806,83 @@ function importData(event){
     requestAnimationFrame(loop);
   }
 })();
+
+// ── TUTORIAL TOUR ──
+const TOUR_STEPS=[
+  {tab:'budget',  target:'income-display-card', title:'Your real take-home',   desc:'Calculated after federal, state, and FICA taxes for your exact state. Everything in the app flows from this number.'},
+  {tab:'budget',  target:'adj-card',         title:'Monthly adjustments',   desc:'Log overtime, bonuses, or unpaid time off. These apply to this month only and reset automatically.'},
+  {tab:'budget',  target:'expense-grid',        title:'Budget categories',     desc:'Set how much you plan to spend in each category. Watch your savings score update live.'},
+  {tab:'budget',  target:'savings-card',        title:'Savings score',         desc:'The difference between your take-home and total budgeted expenses. Rated from Catastrophic to Astronomical.'},
+  {tab:'tracker', target:'log-form',            title:'Log expenses',          desc:'Record actual purchases as they happen. At month end, your savings are calculated from what you actually spent.'},
+  {tab:'savingslog',target:'sl-log-card',       title:'Savings log',           desc:'Track money you move toward each savings goal — emergency fund, investments, or whatever you set up.'},
+  {tab:'alltime', target:'ats-bucket-grid',     title:'All-time totals',       desc:'Your complete savings history across all goals. See contributions, gains, and withdrawals over time.'},
+  {tab:'settings',target:'tab-settings',   title:'Settings',              desc:'Update your income, state, PTO type, or categories anytime. Changes apply instantly across every tab.'},
+];
+let _tourStep=0,_tourActive=false;
+
+function startTour(){
+  _tourStep=0;_tourActive=true;
+  // Remove any existing tour elements
+  document.querySelectorAll('.tour-overlay,.tour-spotlight,.tour-card').forEach(e=>e.remove());
+  renderTourStep();
+}
+
+function renderTourStep(){
+  document.querySelectorAll('.tour-overlay,.tour-spotlight,.tour-card').forEach(e=>e.remove());
+  if(!_tourActive||_tourStep>=TOUR_STEPS.length){endTour();return;}
+  const s=TOUR_STEPS[_tourStep];
+  // Switch to the right tab
+  showTab(s.tab);
+  setTimeout(()=>{
+    const target=document.getElementById(s.target)||document.querySelector('.'+s.target);
+    if(!target){_tourStep++;renderTourStep();return;}
+    // Scroll target into view
+    target.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>{
+      const r=target.getBoundingClientRect();
+      const pad=8;
+      // Spotlight
+      const spot=document.createElement('div');spot.className='tour-spotlight';
+      spot.style.cssText=`left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;`;
+      document.body.appendChild(spot);
+      // Card
+      const card=document.createElement('div');card.className='tour-card';
+      const dots=TOUR_STEPS.map((_,i)=>`<div class="tour-dot${i===_tourStep?' active':''}"></div>`).join('');
+      card.innerHTML=`
+        <div class="tour-step-label">Step ${_tourStep+1} of ${TOUR_STEPS.length}</div>
+        <div class="tour-title">${s.title}</div>
+        <div class="tour-desc">${s.desc}</div>
+        <div class="tour-actions">
+          <div class="tour-dots">${dots}</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="tour-skip" onclick="endTour()">Skip</span>
+            <div class="tour-btn-row">
+              ${_tourStep>0?'<button class="tour-btn" onclick="tourPrev()">←</button>':''}
+              <button class="tour-btn primary" onclick="tourNext()">${_tourStep===TOUR_STEPS.length-1?'Done ✓':'Next →'}</button>
+            </div>
+          </div>
+        </div>`;
+      // Position card above or below target
+      const cardW=300,cardH=180;
+      let top=r.bottom+pad+12;let left=r.left;
+      if(top+cardH>window.innerHeight-20)top=r.top-cardH-pad-12;
+      if(left+cardW>window.innerWidth-20)left=window.innerWidth-cardW-20;
+      if(left<10)left=10;
+      card.style.top=Math.max(10,top)+'px';card.style.left=left+'px';
+      document.body.appendChild(card);
+    },350);
+  },280);
+}
+
+function tourNext(){_tourStep++;renderTourStep();}
+function tourPrev(){_tourStep=Math.max(0,_tourStep-1);renderTourStep();}
+function endTour(){
+  _tourActive=false;
+  document.querySelectorAll('.tour-spotlight,.tour-card').forEach(e=>e.remove());
+  showToast('Tour complete! Find it again in Settings.','good');
+  // Mark tour as seen
+  if(user){user.profile.tourSeen=true;saveUser();}
+}
 
 // ── BOOT — restore Supabase session ──
 (async()=>{
