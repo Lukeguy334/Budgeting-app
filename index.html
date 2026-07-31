@@ -2930,7 +2930,8 @@ function importData(event){
           const str=(FORCE+40)*(1-bd/(RADIUS+100));
           _items.push({el:el2,x:r.left,y:r.top,w:r.width,h:r.height,
             vx:(bdx/bd)*str,vy:(bdy/bd)*str-str*0.7,
-            rot:0,rotV:(Math.random()-.5)*12,dragging:false,grabOffX:0,grabOffY:0});
+            rot:0,rotV:(Math.random()-.5)*12,dragging:false,grabOffX:0,grabOffY:0,
+            origStyle:{bg:el2.style.background,color:el2.style.color,border:el2.style.border}});
           el2.addEventListener('mousedown',e=>{
             const p2=_items.find(x=>x.el===el2);if(!p2)return;
             p2.dragging=true;p2.grabOffX=e.clientX-p2.x;p2.grabOffY=e.clientY-p2.y;
@@ -3006,7 +3007,7 @@ function importData(event){
   }
   function _repulsorBlast(){
     // Instant outward push from cursor — like a shockwave
-    const FORCE=36,RADIUS=450;
+    const FORCE=62,RADIUS=520;
     for(const p of _items){
       const bx=p.x+p.w/2,by=p.y+p.h/2;
       const dx=bx-_mouseX,dy=by-_mouseY;
@@ -3054,8 +3055,11 @@ function importData(event){
     _rainbowMode=!_rainbowMode;
     if(!_rainbowMode){
       _items.forEach(p=>{
-        if(p.origBg!==undefined){p.el.style.background=p.origBg;delete p.origBg;}
-        p.el.style.color='';p.el.style.borderColor='';
+        if(p.origStyle){
+          p.el.style.background=p.origStyle.bg||'';
+          p.el.style.color=p.origStyle.color||'';
+          p.el.style.border=p.origStyle.border||'';
+        }else{p.el.style.background='';p.el.style.color='';p.el.style.borderColor='';}
       });
     }
     _toast(_rainbowMode?'🌈 Rainbow mode ON!':'🌈 Rainbow mode OFF');
@@ -3076,7 +3080,7 @@ function importData(event){
     for(const p of _items){p.vy=-(Math.random()*18+10);p.vx=(Math.random()-.5)*12;p.rotV=(Math.random()-.5)*10;}
     _toast('🚀 Launch!');
   }
-  const CONF_MAX=300;
+  const CONF_MAX=500;
   function _dropConfetti(){
     const colors=['#00C896','#60A5FA','#F5A623','#F87171','#A78BFA','#FFE066','#FF69B4','#00E5FF'];
     // Cull oldest confetti to stay within CONF_MAX
@@ -3100,7 +3104,7 @@ function importData(event){
         _items.push({el,x,y:-20,w:size,h:size,
           vx:(Math.random()-.5)*5,vy:Math.random()*3+1,
           rot:Math.random()*360,rotV:(Math.random()-.5)*10,
-          dragging:false,grabOffX:0,grabOffY:0,isConfetti:true,life:720});
+          dragging:false,grabOffX:0,grabOffY:0,isConfetti:true,life:2100});
       },i*35);
     }
     _toast('🎊 Confetti!');
@@ -3162,12 +3166,28 @@ function importData(event){
               <div style="position:absolute;inset:-32px;border-radius:50%;border:1px solid rgba(0,200,150,.25);animation:nw-ring 1.2s .4s ease-out infinite;"></div>
             </div>
             <div style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:#F0EDE6;letter-spacing:-.01em;opacity:0;animation:nw-fadein .5s .2s forwards;">Net<span style="color:#00C896">Worth</span></div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#00C896;letter-spacing:.18em;opacity:0;animation:nw-fadein .5s .5s forwards;">SYSTEMS RESTORED</div>
+            <div id="nw-restore-line" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#00C896;letter-spacing:.1em;opacity:0;animation:nw-fadein .5s .5s forwards;text-align:center;max-width:280px;"></div>
             <div style="width:240px;height:3px;background:#1C2130;border-radius:2px;overflow:hidden;opacity:0;animation:nw-fadein .3s .7s forwards;">
               <div style="height:100%;background:linear-gradient(90deg,#00C896,#60A5FA);border-radius:2px;animation:nw-progress-fill .9s .8s ease-out forwards;"></div>
             </div>`;
           document.body.appendChild(ov);
-          setTimeout(()=>location.reload(),1800);
+          // Cycle witty restore lines
+          const _wl=['Filling your piggy bank…','Balancing the books…','Crunching the numbers…',
+            'Recalculating take-home pay…','Allocating your dreams…','Budgeting for chaos…',
+            'Counting every coin…','Making it rain (responsibly)…','Consulting the savings oracle…',
+            'Rebuilding your net worth…','Sweeping up the confetti…','Defragmenting finances…',
+            'Restoring financial order…','Compounding interest in progress…','Saving you from yourself…'];
+          let _wli=Math.floor(Math.random()*_wl.length);
+          const _wlEl=document.getElementById('nw-restore-line');
+          if(_wlEl){_wlEl.textContent=_wl[_wli];}
+          const _wlIv=setInterval(()=>{
+            _wli=(_wli+1)%_wl.length;
+            if(_wlEl){
+              _wlEl.style.opacity='0';
+              setTimeout(()=>{if(_wlEl){_wlEl.textContent=_wl[_wli];_wlEl.style.transition='opacity .3s';_wlEl.style.opacity='1';}},200);
+            }
+          },700);
+          setTimeout(()=>{clearInterval(_wlIv);location.reload();},1800);
         }
       },22);
     },450);
@@ -3249,7 +3269,7 @@ function importData(event){
     const bombEl=document.createElement('div');bombEl.className='nw-egg-el';
     bombEl.style.cssText=`position:fixed;left:${vw/2-45}px;top:-220px;width:90px;
       z-index:10000;pointer-events:none;filter:drop-shadow(0 10px 40px rgba(0,0,0,.95));`;
-    bombEl.innerHTML=`<svg viewBox="0 0 60 200" width="90" height="200">
+    bombEl.innerHTML=`<svg viewBox="0 0 60 200" width="90" height="200" style="transform:rotate(180deg);display:block;">
       <defs>
         <linearGradient id="ng1" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stop-color="#8a9bb0"/>
@@ -3436,7 +3456,8 @@ function importData(event){
       document.body.appendChild(el);btn.style.visibility='hidden';
       const p={el,x:rect.left,y:rect.top,w:rect.width,h:rect.height,
         vx:(Math.random()-.5)*12,vy:-Math.random()*8-2,
-        rot:0,rotV:(Math.random()-.5)*6,dragging:false,grabOffX:0,grabOffY:0};
+        rot:0,rotV:(Math.random()-.5)*6,dragging:false,grabOffX:0,grabOffY:0,
+        origStyle:{bg:el.style.background,color:el.style.color,border:el.style.border}};
       setTimeout(()=>{if(_active)_items.push(p);},si*60);
       el.addEventListener('mousedown',e=>{
         p.dragging=true;p.grabOffX=e.clientX-p.x;p.grabOffY=e.clientY-p.y;
@@ -3457,7 +3478,8 @@ function importData(event){
       _rainbowT+=dt;
       if(_rainbowMode&&_items.length){
         _items.forEach((p,i)=>{
-          if(p.origBg===undefined)p.origBg=p.el.style.background; // save once
+          // origStyle is set at creation time; if missing, save now as fallback
+          if(!p.origStyle)p.origStyle={bg:p.el.style.background,color:p.el.style.color,border:p.el.style.border};
           const hue=(_rainbowT*4+i*37)%360;
           p.el.style.background=`hsl(${hue},80%,50%)`;
           p.el.style.color='#0D0F14';
