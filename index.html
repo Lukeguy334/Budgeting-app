@@ -859,6 +859,24 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   </div>
 </div>
 
+<!-- ══ TRIAL USED ══ -->
+<div class="screen" id="screen-trial-used" style="align-items:center;justify-content:center;padding:32px 16px;">
+  <div class="auth-card">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:42px;margin-bottom:12px;">🔒</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px;">Free trial already used</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.65;">This card has already been used for a NetWorth free trial. Each card can only receive one free trial.</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:20px;font-size:13px;color:var(--muted);line-height:1.65;">
+      Subscribe to get full access to your budget, savings goals, PTO tracker, and everything else.
+    </div>
+    <button class="btn-primary" onclick="showScreen('payment')" style="margin-bottom:12px;">View pricing plans</button>
+    <div style="text-align:center;">
+      <a onclick="handleSignOut()" style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px;">Sign out</a>
+    </div>
+  </div>
+</div>
+
 <!-- ══ VERIFY EMAIL ══ -->
 <div class="screen" id="screen-verify" style="align-items:center;justify-content:center;padding:32px 16px;">
   <div class="auth-card">
@@ -1750,6 +1768,7 @@ async function handleAuth(){
     }
     user=res.user;
     if(!user.profile)startOnboarding();
+    else if(user.subscription.status==='trial_used')showScreen('trial-used');
     else if(user.subscription.status==='none')showScreen('payment');
     else initApp();
   }
@@ -2828,6 +2847,9 @@ function updateSubscriptionBadge(){
     if(cancelWrap)cancelWrap.style.display='block';
   }else if(sub.status==='canceling'){
     el.innerHTML=`<div class="sub-badge trial">✓ Cancelled — access continues until period end</div>`;
+    if(cancelWrap)cancelWrap.style.display='none';
+  }else if(sub.status==='trial_used'){
+    el.innerHTML=`<div class="sub-badge" style="background:rgba(248,113,113,.1);color:var(--danger);border-color:rgba(248,113,113,.3);">⚠️ Trial already used — card on file was previously used for a free trial</div>`;
     if(cancelWrap)cancelWrap.style.display='none';
   }else{
     el.innerHTML=`<div class="sub-badge trial">No active subscription</div>`;
@@ -4143,6 +4165,7 @@ function _endTour(){
       window.history.replaceState({},'','/');
     }
     if(!user.profile)startOnboarding();
+    else if(user.subscription.status==='trial_used')showScreen('trial-used');
     else if(user.subscription.status==='none')showScreen('payment');
     else initApp();
   }else{
