@@ -1,12 +1,8 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const PRICE_IDS = {
-  // Test mode prices (switch to live when done testing)
-  monthly: 'price_1TxaxB1MGxEsTGnjUrEkssq2',
-  annual:  'price_1Txaxx1MGxEsTGnjp9llMQu9',
-  // Live mode prices (uncomment and swap sk_live_ key when ready)
-  // monthly: 'price_1TxZWw1MGxEsTGnjwZWRSE0I',
-  // annual:  'price_1TxZWw1MGxEsTGnjrka4QHeP',
+  monthly: 'price_1TxZWw1MGxEsTGnjwZWRSE0I',
+  annual:  'price_1TxZWw1MGxEsTGnjrka4QHeP',
 };
 
 module.exports = async (req, res) => {
