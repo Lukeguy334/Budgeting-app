@@ -433,6 +433,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 @keyframes nw-spin-logo{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes nw-pulse{from{box-shadow:0 0 20px rgba(0,200,150,.3)}to{box-shadow:0 0 60px rgba(0,200,150,.8)}}
 @keyframes nw-progress-fill{from{width:0}to{width:100%}}
+@keyframes nw-fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes nw-nuke-blink{0%,100%{opacity:1}50%{opacity:.25}}
 .nw-shaking{animation:nw-shake .35s ease-out;}
 .lp-nav-logo{display:flex;align-items:center;gap:10px;}
@@ -2805,25 +2806,33 @@ function importData(event){
   });
 
   function _collide(a,b){
-    // AABB overlap check
-    const ox=(a.w+b.w)/2-Math.abs((a.x+a.w/2)-(b.x+b.w/2));
-    const oy=(a.h+b.h)/2-Math.abs((a.y+a.h/2)-(b.y+b.h/2));
+    const cxa=a.x+a.w/2,cya=a.y+a.h/2;
+    const cxb=b.x+b.w/2,cyb=b.y+b.h/2;
+    const ox=(a.w+b.w)/2-Math.abs(cxa-cxb);
+    const oy=(a.h+b.h)/2-Math.abs(cya-cyb);
     if(ox<=0||oy<=0)return;
-    const E=0.72; // restitution
+    const E=0.82; // higher restitution = snappier bounces
     if(ox<oy){
-      // Horizontal bounce
-      const sign=(a.x+a.w/2)<(b.x+b.w/2)?-1:1;
-      a.x+=sign*ox/2;b.x-=sign*ox/2;
-      const avg=(a.vx+b.vx)/2;
-      a.vx=avg+(avg-a.vx)*E;b.vx=avg+(avg-b.vx)*E;
-      a.rotV+=(b.vy-a.vy)*0.07;b.rotV+=(a.vy-b.vy)*0.07;
+      // Separate along X
+      const sign=cxa<cxb?-1:1;
+      a.x+=sign*ox*.5;b.x-=sign*ox*.5;
+      // Only apply impulse if approaching (prevents sticky collisions)
+      const relVx=a.vx-b.vx;
+      if(sign*relVx<0){
+        const imp=(1+E)*relVx*.5;
+        a.vx-=imp;b.vx+=imp;
+      }
+      a.rotV+=(b.vy-a.vy)*.08;b.rotV+=(a.vy-b.vy)*.08;
     }else{
-      // Vertical bounce
-      const sign=(a.y+a.h/2)<(b.y+b.h/2)?-1:1;
-      a.y+=sign*oy/2;b.y-=sign*oy/2;
-      const avg=(a.vy+b.vy)/2;
-      a.vy=avg+(avg-a.vy)*E;b.vy=avg+(avg-b.vy)*E;
-      a.rotV+=(b.vx-a.vx)*0.07;b.rotV+=(a.vx-b.vx)*0.07;
+      // Separate along Y
+      const sign=cya<cyb?-1:1;
+      a.y+=sign*oy*.5;b.y-=sign*oy*.5;
+      const relVy=a.vy-b.vy;
+      if(sign*relVy<0){
+        const imp=(1+E)*relVy*.5;
+        a.vy-=imp;b.vy+=imp;
+      }
+      a.rotV+=(b.vx-a.vx)*.08;b.rotV+=(a.vx-b.vx)*.08;
     }
   }
 
@@ -2952,7 +2961,7 @@ function importData(event){
     <div id="nw-nuke-btn" style="background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.5);border-radius:6px;padding:7px 10px;font-size:11px;color:#F87171;font-weight:700;text-align:center;user-select:none;">☢️ PRESS N TO NUKE</div>
     <div id="nw-nuke-lid" style="position:absolute;inset:0;background:rgba(28,33,48,.95);border:1.5px solid rgba(248,113,113,.6);border-radius:6px;display:flex;align-items:center;justify-content:center;transform-origin:top center;transition:transform .45s cubic-bezier(.4,0,.2,1),opacity .45s;cursor:pointer;font-size:10px;color:#F87171;font-weight:700;letter-spacing:.05em;" onclick="_liftNukeCover()">⚠️ ARMED — PRESS L</div>
   </div>
-  <div style="font-size:9px;color:#4A5568;margin-top:5px;text-align:center;">L lifts cover · 5s window · N detonates</div>
+  
 </div>
 <div style="color:#4A5568;margin-top:6px;font-size:10px;">Shift+R to restore page</div>
 <div id="nw-hud-status" style="color:#00C896;margin-top:6px;min-height:16px;"></div>`;
@@ -3043,7 +3052,12 @@ function importData(event){
   }
   function _toggleRainbow(){
     _rainbowMode=!_rainbowMode;
-    if(!_rainbowMode)_items.forEach(p=>p.el.style.background='');
+    if(!_rainbowMode){
+      _items.forEach(p=>{
+        if(p.origBg!==undefined){p.el.style.background=p.origBg;delete p.origBg;}
+        p.el.style.color='';p.el.style.borderColor='';
+      });
+    }
     _toast(_rainbowMode?'🌈 Rainbow mode ON!':'🌈 Rainbow mode OFF');
     _hudStatus(_rainbowMode?'🌈 Rainbow mode ON':'');
   }
@@ -3094,31 +3108,69 @@ function importData(event){
 
   // ── RESET PAGE ──
   function _resetPage(){
-    // Fling everything upward then restore
+    // Fling everything off screen
     for(const p of _items){p.vx=(Math.random()-.5)*28;p.vy=-(Math.random()*35+18);p.rotV=(Math.random()-.5)*22;}
-    // Overlay with restore animation
+    // Phase 1: darken
+    const dark=document.createElement('div');
+    dark.style.cssText='position:fixed;inset:0;background:#0D0F14;z-index:20000;opacity:0;transition:opacity .4s;pointer-events:none;';
+    document.body.appendChild(dark);
+    requestAnimationFrame(()=>dark.style.opacity='1');
     setTimeout(()=>{
-      const ov=document.createElement('div');
-      ov.style.cssText='position:fixed;inset:0;background:#0D0F14;z-index:20000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;opacity:0;transition:opacity .35s;';
-      ov.innerHTML=`<div style="position:relative;width:64px;height:64px;">
-        <svg width="64" height="64" viewBox="0 0 100 100" fill="none" style="animation:nw-spin-logo 1s linear infinite;position:absolute;inset:0;">
-          <polygon points="6,50 28,12 72,12 94,50 72,88 28,88" fill="#0A1410" stroke="#00C896" stroke-width="5" stroke-linejoin="round"/>
-          <polyline points="22,73 38,52 52,63 77,33" fill="none" stroke="#00C896" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="22" cy="73" r="5" fill="#00C896"/><circle cx="38" cy="52" r="5" fill="#00C896"/>
-          <circle cx="52" cy="63" r="5" fill="#00C896"/><circle cx="77" cy="33" r="5" fill="#00C896"/>
-          <polyline points="73,29 77,33 73,37" fill="none" stroke="#00C896" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div style="position:absolute;inset:0;border-radius:50%;box-shadow:0 0 40px rgba(0,200,150,.6);animation:nw-pulse .8s ease-in-out infinite alternate;"></div>
-      </div>
-      <div style="font-family:Outfit,sans-serif;font-size:20px;font-weight:700;color:#F0EDE6;letter-spacing:-.01em;">Restoring NetWorth…</div>
-      <div style="width:220px;height:4px;background:#232A3A;border-radius:2px;overflow:hidden;">
-        <div style="height:100%;background:#00C896;border-radius:2px;animation:nw-progress-fill 1s ease-in-out forwards;"></div>
-      </div>
-      <div style="font-size:12px;color:#4A5568;font-family:Inter,sans-serif;">Just a moment</div>`;
-      document.body.appendChild(ov);
-      requestAnimationFrame(()=>ov.style.opacity='1');
-      setTimeout(()=>location.reload(),1300);
-    },350);
+      // Phase 2: matrix rain canvas
+      const canvas=document.createElement('canvas');
+      canvas.style.cssText='position:fixed;inset:0;z-index:20001;pointer-events:none;';
+      canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+      document.body.appendChild(canvas);
+      const ctx=canvas.getContext('2d');
+      const cols=Math.floor(canvas.width/15);
+      const drops=Array.from({length:cols},()=>Math.random()*-canvas.height/15);
+      // NetWorth-themed character set
+      const chars='NetWorthBudget$GoalSave0123456789☢💰📈🛡️%#@!+-=';
+      let frame=0;
+      const matRaf=setInterval(()=>{
+        ctx.fillStyle='rgba(13,15,20,0.06)';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        frame++;
+        for(let i=0;i<cols;i++){
+          // Brighter lead character
+          ctx.fillStyle=frame<20?'#fff':'#00C896';
+          ctx.font=`${frame<20?'bold ':''}13px "JetBrains Mono",monospace`;
+          const ch=chars[Math.floor(Math.random()*chars.length)];
+          ctx.fillText(ch,i*15,drops[i]*15);
+          // Dimmer trail
+          ctx.fillStyle='rgba(0,180,130,.4)';
+          ctx.font='12px "JetBrains Mono",monospace';
+          if(drops[i]>2)ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*15,(drops[i]-2)*15);
+          drops[i]++;
+          if(drops[i]*15>canvas.height+50&&Math.random()>.97)drops[i]=Math.random()*-10;
+        }
+        if(frame>=90){
+          clearInterval(matRaf);canvas.remove();
+          // Phase 3: assembly animation
+          const ov=document.createElement('div');
+          ov.style.cssText='position:fixed;inset:0;z-index:20002;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;pointer-events:none;';
+          ov.innerHTML=`
+            <div style="position:relative;width:80px;height:80px;">
+              <svg width="80" height="80" viewBox="0 0 100 100" fill="none" style="animation:nw-spin-logo .7s linear infinite;">
+                <polygon points="6,50 28,12 72,12 94,50 72,88 28,88" fill="#0A1410" stroke="#00C896" stroke-width="5" stroke-linejoin="round"/>
+                <polyline points="22,73 38,52 52,63 77,33" fill="none" stroke="#00C896" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="22" cy="73" r="5" fill="#00C896"/><circle cx="38" cy="52" r="5" fill="#00C896"/>
+                <circle cx="52" cy="63" r="5" fill="#00C896"/><circle cx="77" cy="33" r="5" fill="#00C896"/>
+                <polyline points="73,29 77,33 73,37" fill="none" stroke="#00C896" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div style="position:absolute;inset:-16px;border-radius:50%;border:2px solid rgba(0,200,150,.6);animation:nw-ring 1.2s ease-out infinite;"></div>
+              <div style="position:absolute;inset:-32px;border-radius:50%;border:1px solid rgba(0,200,150,.25);animation:nw-ring 1.2s .4s ease-out infinite;"></div>
+            </div>
+            <div style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:#F0EDE6;letter-spacing:-.01em;opacity:0;animation:nw-fadein .5s .2s forwards;">Net<span style="color:#00C896">Worth</span></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#00C896;letter-spacing:.18em;opacity:0;animation:nw-fadein .5s .5s forwards;">SYSTEMS RESTORED</div>
+            <div style="width:240px;height:3px;background:#1C2130;border-radius:2px;overflow:hidden;opacity:0;animation:nw-fadein .3s .7s forwards;">
+              <div style="height:100%;background:linear-gradient(90deg,#00C896,#60A5FA);border-radius:2px;animation:nw-progress-fill .9s .8s ease-out forwards;"></div>
+            </div>`;
+          document.body.appendChild(ov);
+          setTimeout(()=>location.reload(),1800);
+        }
+      },22);
+    },450);
   }
 
   // ── NUKE COVER ──
@@ -3195,15 +3247,56 @@ function importData(event){
   function _dropNukeBomb(){
     const vw=window.innerWidth,vh=window.innerHeight;
     const bombEl=document.createElement('div');bombEl.className='nw-egg-el';
-    bombEl.style.cssText=`position:fixed;left:${vw/2-60}px;top:-140px;font-size:110px;line-height:1;
-      z-index:10000;pointer-events:none;filter:drop-shadow(0 10px 30px rgba(0,0,0,.9));`;
-    bombEl.textContent='💣';document.body.appendChild(bombEl);
-    let y=-140,vy=3,wobble=0;
+    bombEl.style.cssText=`position:fixed;left:${vw/2-45}px;top:-220px;width:90px;
+      z-index:10000;pointer-events:none;filter:drop-shadow(0 10px 40px rgba(0,0,0,.95));`;
+    bombEl.innerHTML=`<svg viewBox="0 0 60 200" width="90" height="200">
+      <defs>
+        <linearGradient id="ng1" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#8a9bb0"/>
+          <stop offset="35%" stop-color="#d0d8e0"/>
+          <stop offset="65%" stop-color="#e8edf2"/>
+          <stop offset="100%" stop-color="#a0aab4"/>
+        </linearGradient>
+        <linearGradient id="ng2" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#6b1a1a"/>
+          <stop offset="40%" stop-color="#cc2222"/>
+          <stop offset="100%" stop-color="#8b1a1a"/>
+        </linearGradient>
+      </defs>
+      <!-- Exhaust plume -->
+      <ellipse cx="30" cy="196" rx="18" ry="9" fill="rgba(255,120,0,.65)"/>
+      <ellipse cx="30" cy="193" rx="12" ry="6" fill="rgba(255,210,0,.8)"/>
+      <ellipse cx="30" cy="190" rx="7" ry="4" fill="rgba(255,255,200,.9)"/>
+      <!-- Body -->
+      <rect x="16" y="55" width="28" height="130" rx="2" fill="url(#ng1)"/>
+      <!-- Body shadow left -->
+      <rect x="16" y="55" width="6" height="130" rx="2" fill="rgba(0,0,0,.18)"/>
+      <!-- Warning bands -->
+      <rect x="16" y="76" width="28" height="8" fill="#CC2222" opacity=".9"/>
+      <rect x="16" y="76" width="28" height="4" fill="rgba(255,255,255,.12)"/>
+      <rect x="16" y="108" width="28" height="8" fill="#CC2222" opacity=".9"/>
+      <rect x="16" y="135" width="28" height="8" fill="#CC2222" opacity=".9"/>
+      <!-- Warhead nose cone -->
+      <path d="M16,55 L30,6 L44,55 Z" fill="url(#ng2)"/>
+      <path d="M16,55 L30,6 L23,55 Z" fill="rgba(255,255,255,.12)"/>
+      <!-- Nose tip glow -->
+      <circle cx="30" cy="8" r="3" fill="#ff6666" opacity=".8"/>
+      <!-- ☢ symbol -->
+      <text x="30" y="104" text-anchor="middle" font-size="13" fill="#CC2222" font-family="Arial">☢</text>
+      <!-- Side fins -->
+      <path d="M16,168 L4,195 L16,148 Z" fill="#7a8899"/>
+      <path d="M44,168 L56,195 L44,148 Z" fill="#7a8899"/>
+      <!-- Fin shading -->
+      <path d="M16,168 L10,185 L16,155 Z" fill="rgba(255,255,255,.15)"/>
+      <path d="M44,168 L50,185 L44,155 Z" fill="rgba(0,0,0,.2)"/>
+    </svg>`;
+    document.body.appendChild(bombEl);
+    let y=-220,vy=3,wobble=0;
     const fallIv=setInterval(()=>{
       vy+=0.9;y+=vy;wobble+=0.15;
       bombEl.style.top=y+'px';
-      bombEl.style.transform=`rotate(${Math.sin(wobble)*4}deg) scale(${1+vy*0.01})`;
-      if(y>=vh-150){
+      bombEl.style.transform=`translateX(${Math.sin(wobble)*8}px) rotate(${Math.sin(wobble)*3}deg)`;  // sway side to side as it falls
+      if(y>=vh-220){
         clearInterval(fallIv);bombEl.remove();
         _executeNuke();
       }
@@ -3364,6 +3457,7 @@ function importData(event){
       _rainbowT+=dt;
       if(_rainbowMode&&_items.length){
         _items.forEach((p,i)=>{
+          if(p.origBg===undefined)p.origBg=p.el.style.background; // save once
           const hue=(_rainbowT*4+i*37)%360;
           p.el.style.background=`hsl(${hue},80%,50%)`;
           p.el.style.color='#0D0F14';
@@ -3463,16 +3557,24 @@ function importData(event){
             if(p.life<-10){p.el.remove();_items.splice(i,1);i--;n--;continue;}
           }
         }
-        // Collisions (skip confetti and debris)
-        if(!p.isConfetti&&!p.isDebris){
-          for(let j=i+1;j<n;j++){
-            if(!_items[j].dragging&&!_items[j].isConfetti&&!_items[j].isDebris)_collide(p,_items[j]);
-          }
-        }
+        // (collision done in multi-pass after movement)
         p.el.style.left=p.x+'px';p.el.style.top=p.y+'px';
         p.el.style.transform=`rotate(${p.rot}deg)`;
       }
       // Confetti now handled as part of _items
+      // ── Multi-pass collision (2 iterations for stability) ──
+      for(let pass=0;pass<2;pass++){
+        for(let ci=0;ci<_items.length;ci++){
+          const ca=_items[ci];
+          if(ca.isConfetti||ca.isDebris||ca.dragging)continue;
+          for(let cj=ci+1;cj<_items.length;cj++){
+            const cb=_items[cj];
+            if(cb.isConfetti||cb.isDebris||cb.dragging)continue;
+            _collide(ca,cb);
+          }
+        }
+      }
+
       // Bomb physics
       for(let bi=_bombs.length-1;bi>=0;bi--){
         const b=_bombs[bi];
