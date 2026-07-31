@@ -10,7 +10,10 @@
 <meta property="og:title" content="NetWorth — Know Your Number">
 <meta property="og:description" content="Budget smarter. Track savings goals, calculate your real take-home pay, manage PTO, and more — all in one personalized dashboard.">
 <meta property="og:image" content="https://networth.ink/og-image.png">
+<meta property="og:image:secure_url" content="https://networth.ink/og-image.png">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
+<meta property="og:image:alt" content="NetWorth — Know your number. Own your future.">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="https://networth.ink">
 <meta property="og:type" content="website">
@@ -134,7 +137,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 
 /* MAIN APP */
 #screen-app{flex-direction:column;}
-.tab-bar{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;overflow-x:auto;}
+.tab-bar{position:sticky;top:0;z-index:100;background:rgba(13,15,20,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
 .nw-logo-wrap{display:flex;align-items:center;gap:9px;margin-right:14px;padding:12px 0;flex-shrink:0;}
 .tab-btn{background:none;border:none;color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:15px 11px 13px;cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap;flex-shrink:0;}
 .tab-btn:hover{color:var(--text);}
@@ -153,6 +157,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 
 /* Income Display (read-only) */
 .income-display-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin-bottom:12px;}
+@media(max-width:600px){.income-display-row{gap:12px;}.income-stat-val{font-size:15px;}}
 .income-display-row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;margin-bottom:8px;}
 .income-stat{flex:1;min-width:120px;}
 .income-stat-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
@@ -221,6 +226,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 
 /* Expense Cards */
 .expense-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:11px;margin-bottom:11px;}
+@media(max-width:520px){.expense-grid,.loans-grid,.ats-bucket-grid,.sl-bucket-grid,.pto-hero,.alloc-grid,.benefits-grid,.tracker-summary{grid-template-columns:1fr!important;}}
 .expense-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px 16px;}
 .expense-card.locked{opacity:.65;}
 .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
@@ -515,10 +521,30 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 .lp-footer-left{display:flex;align-items:center;gap:10px;}
 .lp-footer-right{font-size:11px;color:var(--muted);}
 @media(max-width:720px){
-  .lp-nav{padding:0 20px;}
+  .lp-nav{padding:0 16px;}
+  .lp-nav .nw-logo-text{font-size:17px;}
   .lp-features-grid,.lp-how,.lp-pricing-grid{grid-template-columns:1fr;}
   .lp-mock-cats{grid-template-columns:repeat(2,1fr);}
-  .lp-mock-income{gap:16px;}
+  .lp-mock-income{gap:12px;flex-wrap:wrap;}
+  .lp-section{padding:56px 18px;}
+  .lp-hero{padding:70px 18px 56px;}
+  .lp-footer{padding:20px 18px;flex-direction:column;gap:8px;text-align:center;}
+  .lp-hero-actions{gap:10px;}
+  .lp-cta-main,.lp-cta-sec{padding:12px 22px;font-size:14px;}
+  .lp-price-card{padding:22px 18px;}
+}
+@media(max-width:480px){
+  .lp-h1{font-size:34px!important;letter-spacing:-.02em;}
+  .lp-sub{font-size:14px;}
+  .lp-mockup{display:none;} /* hide app preview on very small screens */
+  .lp-mock-stat .val{font-size:14px;}
+  .lp-nav-actions .lp-btn-ghost{display:none;} /* hide ghost btn on tiny screens */
+  .lp-section-title{font-size:26px!important;}
+  .lp-feat{padding:18px 16px;}
+  .lp-step{padding:4px;}
+  .lp-price-amount{font-size:28px;}
+  .lp-final-cta{padding:56px 18px;}
+  .lp-final-cta h2{font-size:26px!important;}
 }
 </style>
 </head>
@@ -2739,9 +2765,11 @@ function importData(event){
     document.getElementById('screen-landing')?.classList.remove('nw-shaking');
   };
 
+  function _isMobile(){return window.innerWidth<768||('ontouchstart' in window&&window.innerWidth<1024);}
   document.addEventListener('keydown',e=>{
     const landing=document.getElementById('screen-landing');
     if(!landing?.classList.contains('active'))return;
+    if(_isMobile())return; // game mode desktop only
     if(!_active){
       if(e.key.length===1){
         _buf+=e.key.toLowerCase();
@@ -3112,45 +3140,50 @@ function importData(event){
 
   // ── RESET PAGE ──
   function _resetPage(){
-    // Fling everything off screen
+    // 1. Fling everything off screen
     for(const p of _items){p.vx=(Math.random()-.5)*28;p.vy=-(Math.random()*35+18);p.rotV=(Math.random()-.5)*22;}
-    // Phase 1: darken
+
+    // 2. Dark overlay (immediate)
     const dark=document.createElement('div');
-    dark.style.cssText='position:fixed;inset:0;background:#0D0F14;z-index:20000;opacity:0;transition:opacity .4s;pointer-events:none;';
+    dark.style.cssText='position:fixed;inset:0;background:#0D0F14;z-index:20000;opacity:0;transition:opacity .4s;pointer-events:all;';
     document.body.appendChild(dark);
     requestAnimationFrame(()=>dark.style.opacity='1');
+
+    // 3. Matrix rain starts after 500ms
     setTimeout(()=>{
-      // Phase 2: matrix rain canvas
       const canvas=document.createElement('canvas');
       canvas.style.cssText='position:fixed;inset:0;z-index:20001;pointer-events:none;';
-      canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+      canvas.width=window.innerWidth;
+      canvas.height=window.innerHeight;
       document.body.appendChild(canvas);
       const ctx=canvas.getContext('2d');
+      if(!ctx){setTimeout(()=>location.reload(),500);return;}
+
       const cols=Math.floor(canvas.width/15);
       const drops=Array.from({length:cols},()=>Math.random()*-canvas.height/15);
-      // NetWorth-themed character set
       const chars='NetWorthBudget$GoalSave0123456789☢💰📈🛡️%#@!+-=';
       let frame=0;
+
       const matRaf=setInterval(()=>{
         ctx.fillStyle='rgba(13,15,20,0.06)';
         ctx.fillRect(0,0,canvas.width,canvas.height);
         frame++;
         for(let i=0;i<cols;i++){
-          // Brighter lead character
           ctx.fillStyle=frame<20?'#fff':'#00C896';
           ctx.font=`${frame<20?'bold ':''}13px "JetBrains Mono",monospace`;
-          const ch=chars[Math.floor(Math.random()*chars.length)];
-          ctx.fillText(ch,i*15,drops[i]*15);
-          // Dimmer trail
+          ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*15,drops[i]*15);
           ctx.fillStyle='rgba(0,180,130,.4)';
           ctx.font='12px "JetBrains Mono",monospace';
           if(drops[i]>2)ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*15,(drops[i]-2)*15);
           drops[i]++;
           if(drops[i]*15>canvas.height+50&&Math.random()>.97)drops[i]=Math.random()*-10;
         }
+
         if(frame>=90){
-          clearInterval(matRaf);canvas.remove();
-          // Phase 3: assembly animation
+          clearInterval(matRaf);
+          canvas.remove();
+
+          // 4. Logo + witty lines screen
           const ov=document.createElement('div');
           ov.style.cssText='position:fixed;inset:0;z-index:20002;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;pointer-events:none;';
           ov.innerHTML=`
@@ -3168,29 +3201,34 @@ function importData(event){
             <div style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:#F0EDE6;letter-spacing:-.01em;opacity:0;animation:nw-fadein .5s .2s forwards;">Net<span style="color:#00C896">Worth</span></div>
             <div id="nw-restore-line" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#00C896;letter-spacing:.1em;opacity:0;animation:nw-fadein .5s .5s forwards;text-align:center;max-width:280px;"></div>
             <div style="width:240px;height:3px;background:#1C2130;border-radius:2px;overflow:hidden;opacity:0;animation:nw-fadein .3s .7s forwards;">
-              <div style="height:100%;background:linear-gradient(90deg,#00C896,#60A5FA);border-radius:2px;animation:nw-progress-fill .9s .8s ease-out forwards;"></div>
+              <div style="height:100%;background:linear-gradient(90deg,#00C896,#60A5FA);border-radius:2px;animation:nw-progress-fill 3s .8s ease-out forwards;"></div>
             </div>`;
           document.body.appendChild(ov);
-          // Cycle witty restore lines
-          const _wl=['Filling your piggy bank…','Balancing the books…','Crunching the numbers…',
+
+          // 5. Witty lines cycle
+          const wl=['Filling your piggy bank…','Balancing the books…','Crunching the numbers…',
             'Recalculating take-home pay…','Allocating your dreams…','Budgeting for chaos…',
             'Counting every coin…','Making it rain (responsibly)…','Consulting the savings oracle…',
             'Rebuilding your net worth…','Sweeping up the confetti…','Defragmenting finances…',
             'Restoring financial order…','Compounding interest in progress…','Saving you from yourself…'];
-          let _wli=Math.floor(Math.random()*_wl.length);
-          const _wlEl=document.getElementById('nw-restore-line');
-          if(_wlEl){_wlEl.textContent=_wl[_wli];}
-          const _wlIv=setInterval(()=>{
-            _wli=(_wli+1)%_wl.length;
-            if(_wlEl){
-              _wlEl.style.opacity='0';
-              setTimeout(()=>{if(_wlEl){_wlEl.textContent=_wl[_wli];_wlEl.style.transition='opacity .3s';_wlEl.style.opacity='1';}},200);
+          let wli=Math.floor(Math.random()*wl.length);
+          const wlEl=document.getElementById('nw-restore-line');
+          if(wlEl)wlEl.textContent=wl[wli];
+
+          const wlIv=setInterval(()=>{
+            wli=(wli+1)%wl.length;
+            if(wlEl){
+              wlEl.style.transition='opacity .3s';
+              wlEl.style.opacity='0';
+              setTimeout(()=>{if(wlEl){wlEl.textContent=wl[wli];wlEl.style.opacity='1';}},320);
             }
           },1100);
-          setTimeout(()=>{clearInterval(_wlIv);location.reload();},3200);
+
+          // 6. Reload after 3.5 seconds on logo screen
+          setTimeout(()=>{clearInterval(wlIv);location.reload();},3500);
         }
       },22);
-    },450);
+    },500);
   }
 
   // ── NUKE COVER ──
@@ -3431,6 +3469,7 @@ function importData(event){
   }
 
   function _launch(){
+    if(_isMobile())return;
     _active=true;
     const toast=document.createElement('div');
     toast.className='nw-egg-el';
