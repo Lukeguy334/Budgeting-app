@@ -428,6 +428,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 @keyframes nw-shake{0%,100%{transform:translate(0,0);}15%{transform:translate(-5px,3px);}30%{transform:translate(5px,-3px);}45%{transform:translate(-4px,2px);}60%{transform:translate(3px,-2px);}75%{transform:translate(-2px,1px);}}
 @keyframes nw-bigshake{0%,100%{transform:translate(0,0);}10%{transform:translate(-14px,8px);}20%{transform:translate(14px,-10px);}30%{transform:translate(-10px,14px);}40%{transform:translate(12px,-8px);}50%{transform:translate(-8px,12px);}60%{transform:translate(10px,-6px);}70%{transform:translate(-6px,8px);}80%{transform:translate(8px,-4px);}90%{transform:translate(-4px,4px);}}
 .nw-bigshaking{animation:nw-bigshake .8s ease-out;}
+@keyframes nw-quake{0%,100%{transform:translate(0,0);}12%{transform:translate(-12px,7px);}25%{transform:translate(10px,-9px);}37%{transform:translate(-8px,11px);}50%{transform:translate(11px,-7px);}62%{transform:translate(-9px,8px);}75%{transform:translate(8px,-10px);}87%{transform:translate(-7px,6px);}}
+.nw-quaking{animation:nw-quake .12s linear infinite;}
+@keyframes nw-spin-logo{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes nw-pulse{from{box-shadow:0 0 20px rgba(0,200,150,.3)}to{box-shadow:0 0 60px rgba(0,200,150,.8)}}
+@keyframes nw-progress-fill{from{width:0}to{width:100%}}
 .nw-shaking{animation:nw-shake .35s ease-out;}
 .lp-nav-logo{display:flex;align-items:center;gap:10px;}
 .lp-nav-actions{display:flex;align-items:center;gap:12px;}
@@ -2718,12 +2723,13 @@ function importData(event){
   let _gravMode=0; // 0=normal 1=zero 2=reverse
   let _magnetMode=false,_freezeMode=false,_tornadoMode=false,_rainbowMode=false;
   let _windX=0,_windY=0,_earthquake=0;
-  let _blackHole=null; // {x,y,el,ring,t}
+  let _blackHoles=[]; // array of {x,y,el,ring,t,maxT}
+  let _nuked=false;
   let _rainbowT=0;
 
   // Cleanup — called when leaving the landing page
   window._eggCleanup=function(){
-    _active=false;_items=[];_bombs=[];
+    _active=false;_items=[];_bombs=[];_blackHoles=[];_nuked=false;
     _magnetMode=false;_freezeMode=false;_tornadoMode=false;_rainbowMode=false;
     _windX=0;_windY=0;_earthquake=0;_gravMode=0;_blackHole=null;
     document.querySelectorAll('.nw-egg-el').forEach(el=>el.remove());
@@ -2750,12 +2756,11 @@ function importData(event){
       case 'KeyM':      _toggleMagnet();break;
       case 'KeyF':      _toggleFreeze();break;
       case 'KeyT':      _toggleTornado();break;
-      case 'KeyR':      _toggleRainbow();break;
+      case 'KeyR':      if(e.shiftKey){e.preventDefault();_resetPage();}else _toggleRainbow();break;
       case 'KeyE':      _triggerEarthquake();break;
       case 'KeyC':      _dropConfetti();break;
       case 'ArrowUp':   e.preventDefault();_launchAll();break;
-      case 'KeyN':      _nuke();break;
-      case 'KeyR':      if(e.shiftKey){e.preventDefault();location.reload();}break;
+      case 'KeyN':      if(!_nuked)_nuke();break;
     }
   });
 
@@ -2958,7 +2963,7 @@ function importData(event){
     _toast(labels[_gravMode]);_hudStatus(labels[_gravMode]);
   }
   function _spawnBlackHole(){
-    if(_blackHole){_blackHole.el.remove();_blackHole.ring?.remove();_blackHole=null;}
+    if(_blackHoles.length>=5){_blackHoles.shift();} // max 5 at once
     const el=document.createElement('div');el.className='nw-egg-el';
     el.style.cssText=`position:fixed;left:${_mouseX}px;top:${_mouseY}px;
       width:60px;height:60px;border-radius:50%;z-index:9990;pointer-events:none;
@@ -2973,12 +2978,12 @@ function importData(event){
       border:2px solid rgba(100,0,255,.3);transform:translate(-50%,-50%);
       animation:nw-ring 1.5s ease-out infinite;`;
     document.body.appendChild(ring);
-    _blackHole={x:_mouseX,y:_mouseY,el,ring,t:0,maxT:240};
-    _toast('🌑 Black hole spawned at cursor!');_hudStatus('🌑 Black hole active — implodes soon…');
+    _blackHoles.push({x:_mouseX,y:_mouseY,el,ring,t:0,maxT:240});
+    _toast('🌑 Black hole spawned at cursor!');_hudStatus(`🌑 ${_blackHoles.length} black hole(s) active`);
   }
   function _repulsorBlast(){
     // Instant outward push from cursor — like a shockwave
-    const FORCE=22,RADIUS=400;
+    const FORCE=36,RADIUS=450;
     for(const p of _items){
       const bx=p.x+p.w/2,by=p.y+p.h/2;
       const dx=bx-_mouseX,dy=by-_mouseY;
@@ -3020,37 +3025,77 @@ function importData(event){
     _hudStatus(_rainbowMode?'🌈 Rainbow mode ON':'');
   }
   function _triggerEarthquake(){
-    _earthquake=90;
+    _earthquake=120;
+    const landing=document.getElementById('screen-landing');
+    landing?.classList.add('nw-quaking');
+    setTimeout(()=>landing?.classList.remove('nw-quaking'),2000);
+    // Massive initial burst
+    for(const p of _items){
+      p.vx+=(Math.random()-.5)*30;p.vy+=(Math.random()-.5)*25;p.rotV+=(Math.random()-.5)*25;
+    }
     _toast('🌍 EARTHQUAKE!');_hudStatus('🌍 Earthquake!');
   }
   function _launchAll(){
     for(const p of _items){p.vy=-(Math.random()*18+10);p.vx=(Math.random()-.5)*12;p.rotV=(Math.random()-.5)*10;}
     _toast('🚀 Launch!');
   }
+  const CONF_MAX=180;
   function _dropConfetti(){
-    const existing=_items.filter(p=>p.isConfetti).length;
-    if(existing>=40){_toast('🎊 Confetti overload!');return;}
-    const cap=Math.min(40,40-existing);
     const colors=['#00C896','#60A5FA','#F5A623','#F87171','#A78BFA','#FFE066','#FF69B4','#00E5FF'];
-    for(let i=0;i<cap;i++){
+    // Cull oldest confetti to stay within CONF_MAX
+    const existing=_items.filter(p=>p.isConfetti);
+    if(existing.length>=CONF_MAX-30){
+      const toKill=existing.slice(0,Math.min(30,existing.length));
+      toKill.forEach(p=>{p.life=-99;}); // fast-expire them
+    }
+    for(let i=0;i<30;i++){
       setTimeout(()=>{
         if(!_active)return;
+        // Hard cap
+        if(_items.filter(p=>p.isConfetti).length>=CONF_MAX)return;
         const el=document.createElement('div');el.className='nw-egg-el';
-        const size=8+Math.random()*10;const x=Math.random()*window.innerWidth;
+        const size=7+Math.random()*12;const x=Math.random()*window.innerWidth;
         el.style.cssText=`position:fixed;left:${x}px;top:-20px;width:${size}px;height:${size}px;
           background:${colors[Math.floor(Math.random()*colors.length)]};
           border-radius:${Math.random()>.5?'50%':'2px'};
-          pointer-events:none;z-index:9995;transition:opacity .5s;`;
+          pointer-events:none;z-index:9995;`;
         document.body.appendChild(el);
-        const p={el,x,y:-20,w:size,h:size,
-          vx:(Math.random()-.5)*4,vy:Math.random()*2+1,
-          rot:Math.random()*360,rotV:(Math.random()-.5)*8,
-          dragging:false,grabOffX:0,grabOffY:0,
-          isConfetti:true,life:420};  // ~7s at 60fps
-        _items.push(p);
-      },i*50);
+        _items.push({el,x,y:-20,w:size,h:size,
+          vx:(Math.random()-.5)*5,vy:Math.random()*3+1,
+          rot:Math.random()*360,rotV:(Math.random()-.5)*10,
+          dragging:false,grabOffX:0,grabOffY:0,isConfetti:true,life:480});
+      },i*35);
     }
     _toast('🎊 Confetti!');
+  }
+
+  // ── RESET PAGE ──
+  function _resetPage(){
+    // Fling everything upward then restore
+    for(const p of _items){p.vx=(Math.random()-.5)*28;p.vy=-(Math.random()*35+18);p.rotV=(Math.random()-.5)*22;}
+    // Overlay with restore animation
+    setTimeout(()=>{
+      const ov=document.createElement('div');
+      ov.style.cssText='position:fixed;inset:0;background:#0D0F14;z-index:20000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;opacity:0;transition:opacity .35s;';
+      ov.innerHTML=`<div style="position:relative;width:64px;height:64px;">
+        <svg width="64" height="64" viewBox="0 0 100 100" fill="none" style="animation:nw-spin-logo 1s linear infinite;position:absolute;inset:0;">
+          <polygon points="6,50 28,12 72,12 94,50 72,88 28,88" fill="#0A1410" stroke="#00C896" stroke-width="5" stroke-linejoin="round"/>
+          <polyline points="22,73 38,52 52,63 77,33" fill="none" stroke="#00C896" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="22" cy="73" r="5" fill="#00C896"/><circle cx="38" cy="52" r="5" fill="#00C896"/>
+          <circle cx="52" cy="63" r="5" fill="#00C896"/><circle cx="77" cy="33" r="5" fill="#00C896"/>
+          <polyline points="73,29 77,33 73,37" fill="none" stroke="#00C896" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;border-radius:50%;box-shadow:0 0 40px rgba(0,200,150,.6);animation:nw-pulse .8s ease-in-out infinite alternate;"></div>
+      </div>
+      <div style="font-family:Outfit,sans-serif;font-size:20px;font-weight:700;color:#F0EDE6;letter-spacing:-.01em;">Restoring NetWorth…</div>
+      <div style="width:220px;height:4px;background:#232A3A;border-radius:2px;overflow:hidden;">
+        <div style="height:100%;background:#00C896;border-radius:2px;animation:nw-progress-fill 1s ease-in-out forwards;"></div>
+      </div>
+      <div style="font-size:12px;color:#4A5568;font-family:Inter,sans-serif;">Just a moment</div>`;
+      document.body.appendChild(ov);
+      requestAnimationFrame(()=>ov.style.opacity='1');
+      setTimeout(()=>location.reload(),1300);
+    },350);
   }
 
   // ── NUKE ──
@@ -3116,7 +3161,7 @@ function importData(event){
           document.body.appendChild(charEl);
           _items.push({el:charEl,x:sr.left,y:sr.top,
             w:Math.max(sr.width,4),h:sr.height||parseInt(cs.fontSize)||20,
-            vx:(Math.random()-.5)*22,vy:-(Math.random()*14+6),
+            vx:(Math.random()-.5)*28,vy:(Math.random()-.5)*22-4,
             rot:0,rotV:(Math.random()-.5)*30,
             dragging:false,grabOffX:0,grabOffY:0,isDebris:true});
         });
@@ -3125,6 +3170,8 @@ function importData(event){
 
       // Explode hero title and logo as individual chars
       const h1=landing.querySelector('.lp-h1');if(h1)breakChars(h1);
+      const finalH2=landing.querySelector('.lp-final-cta h2');if(finalH2)breakChars(finalH2);
+      const finalP=landing.querySelector('.lp-final-cta p');if(finalP)breakChars(finalP);
       const logoText=landing.querySelector('.lp-nav .nw-logo-text');if(logoText)breakChars(logoText);
       const navLogo=landing.querySelector('.lp-nav .lp-nav-logo svg');if(navLogo)breakBlock(navLogo,-2,10);
 
@@ -3155,7 +3202,11 @@ function importData(event){
           vx:0,vy:-8,rot:0,rotV:0,dragging:false,grabOffX:0,grabOffY:0,isDebris:true});
       }
     },120);
+    _nuked=true;
     _hudStatus('☢️ NUKED — Shift+R to reset');
+    // Grey N in HUD
+    const hudEl=document.getElementById('nw-hud');
+    if(hudEl){const lines=[...hudEl.querySelectorAll('div')];lines.forEach(l=>{if(l.textContent.includes('NUKE')){l.style.opacity='.3';l.style.textDecoration='line-through';}});}
   }
 
   function _launch(){
@@ -3170,44 +3221,6 @@ function importData(event){
     setTimeout(_showHUD,600);
 
     const landing=document.getElementById('screen-landing');
-    const btns=[...landing.querySelectorAll('button')].filter(b=>{
-      const r=b.getBoundingClientRect();
-      return r.width>0&&r.height>0;  // capture ALL buttons, even off-screen
-    });
-
-    btns.forEach((btn,i)=>{
-      const rect=btn.getBoundingClientRect();
-      const cs=getComputedStyle(btn);
-      const el=document.createElement('button');
-      el.className='nw-egg-el';
-      el.textContent=btn.textContent;
-      el.style.cssText=`position:fixed;left:${rect.left}px;top:${rect.top}px;
-        width:${rect.width}px;height:${rect.height}px;margin:0;z-index:9999;cursor:grab;
-        border-radius:${cs.borderRadius};background:${cs.background};color:${cs.color};
-        font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};
-        border:${cs.border};padding:${cs.padding};pointer-events:auto;user-select:none;
-        will-change:left,top,transform;transform-origin:center center;`;
-      document.body.appendChild(el);
-      btn.style.visibility='hidden';
-
-      const offBelow=rect.top>window.innerHeight+20;
-      const offAbove=rect.top<-rect.height;
-      const initVY=offBelow?(-Math.random()*20-18):offAbove?(Math.random()*8+4):(-Math.random()*10-3);
-      const p={el,x:rect.left,y:rect.top,w:rect.width,h:rect.height,
-        vx:(Math.random()-.5)*14,vy:initVY,
-        rot:0,rotV:(Math.random()-.5)*6,dragging:false,grabOffX:0,grabOffY:0};
-      setTimeout(()=>{if(_active)_items.push(p);},i*40);
-
-      el.addEventListener('mousedown',e=>{
-        p.dragging=true;p.grabOffX=e.clientX-p.x;p.grabOffY=e.clientY-p.y;
-        p.vx=0;p.vy=0;p.rotV=0;_mhist.length=0;
-        el.style.cursor='grabbing';
-        el.style.boxShadow='0 12px 40px rgba(0,200,150,.45)';
-        el.style.transform=`rotate(${p.rot}deg) scale(1.1)`;
-        e.preventDefault();e.stopPropagation();
-      });
-    });
-
     const BOUNCE=0.55,FRIC=0.973,RFRIC=0.93,BASE_G=0.5;
     let prev=performance.now();
     function loop(now){
@@ -3231,23 +3244,26 @@ function importData(event){
       if(Math.abs(_windY)<0.01)_windY=0;
       // Earthquake countdown
       if(_earthquake>0)_earthquake-=dt;
-      // Black hole tick
-      if(_blackHole){
-        _blackHole.t+=dt;
-        const prog=_blackHole.t/_blackHole.maxT;
-        const scale=1+prog*0.5;
-        _blackHole.el.style.transform=`translate(-50%,-50%) scale(${scale})`;
-        if(_blackHole.t>=_blackHole.maxT){
-          // Implosion then explosion
-          _blackHole.el.style.transition='transform .15s';
-          _blackHole.el.style.transform='translate(-50%,-50%) scale(0)';
-          _explode(_blackHole.x,_blackHole.y);
-          setTimeout(()=>{_blackHole?.el.remove();_blackHole?.ring?.remove();_blackHole=null;_hudStatus('');},200);
+      // Black holes tick
+      for(let bhi=_blackHoles.length-1;bhi>=0;bhi--){
+        const bh=_blackHoles[bhi];
+        bh.t+=dt;
+        const prog=bh.t/bh.maxT;
+        bh.el.style.transform=`translate(-50%,-50%) scale(${1+prog*0.5})`;
+        if(bh.t>=bh.maxT){
+          bh.el.style.transition='transform .15s';
+          bh.el.style.transform='translate(-50%,-50%) scale(0)';
+          _explode(bh.x,bh.y);
+          const _bh=bh;
+          setTimeout(()=>{_bh.el.remove();_bh.ring?.remove();},200);
+          _blackHoles.splice(bhi,1);
+          if(_blackHoles.length===0)_hudStatus('');
+          else _hudStatus(`🌑 ${_blackHoles.length} black hole(s) active`);
         }
       }
       // Determine effective gravity
       const curG=_freezeMode?0:(_gravMode===0?BASE_G:_gravMode===1?0:-BASE_G*0.55);
-      const n=_items.length;
+      let n=_items.length;
       for(let i=0;i<n;i++){
         const p=_items[i];
         if(p.dragging)continue;
@@ -3261,7 +3277,7 @@ function importData(event){
         if(_magnetMode){
           const mdx=(_mouseX-(p.x+p.w/2)),mdy=(_mouseY-(p.y+p.h/2));
           const md=Math.sqrt(mdx*mdx+mdy*mdy)||1;
-          const mf=Math.min(8,200/md)*dt;
+          const mf=Math.min(18,500/md)*dt;
           p.vx+=mdx/md*mf;p.vy+=mdy/md*mf;
         }
         // Tornado — circular orbit around screen center
@@ -3276,25 +3292,28 @@ function importData(event){
           const radF=Math.sin(_rainbowT*0.6+i*1.9)*0.9+Math.cos(_rainbowT*0.4+i*3.1)*0.5;
           p.vx+=(tdx/td)*radF*dt;p.vy+=(tdy/td)*radF*dt;
         }
-        // Black hole pull
-        if(_blackHole&&_blackHole.t<_blackHole.maxT){
-          const bhdx=_blackHole.x-(p.x+p.w/2),bhdy=_blackHole.y-(p.y+p.h/2);
+        // Black hole pull (from all active black holes)
+        for(const bh of _blackHoles){
+          const bhdx=bh.x-(p.x+p.w/2),bhdy=bh.y-(p.y+p.h/2);
           const bhd=Math.sqrt(bhdx*bhdx+bhdy*bhdy)||1;
-          const strength=(_blackHole.t/_blackHole.maxT)*6+1;
+          const strength=(bh.t/bh.maxT)*7+2;
           p.vx+=bhdx/bhd*strength*dt;p.vy+=bhdy/bhd*strength*dt;
           p.rotV+=strength*0.3*dt;
         }
         // Earthquake
-        if(_earthquake>0){
-          p.vx+=(Math.random()-.5)*5*dt;p.vy+=(Math.random()-.5)*5*dt;
-          p.rotV+=(Math.random()-.5)*8*dt;
+        if(_earthquake>0){_earthquake-=dt;
+          p.vx+=(Math.random()-.5)*18*dt;p.vy+=(Math.random()-.5)*14*dt;
+          p.rotV+=(Math.random()-.5)*20*dt;
         }
         // Friction & movement
         p.vx*=Math.pow(FRIC,dt);
         p.x+=p.vx*dt;p.y+=p.vy*dt;
         p.rotV*=Math.pow(RFRIC,dt);p.rot+=p.rotV*dt;
         // Wall bounces (skip floor/ceiling in reverse gravity so they can float away)
-        if(_gravMode!==2){
+        // Debris falls off screen — remove instead of bounce
+        if(p.isDebris){
+          if(p.y>vh+120||p.x<-300||p.x>vw+300){p.el.remove();_items.splice(i,1);i--;n--;continue;}
+        }else if(_gravMode!==2){
           if(p.y+p.h>=vh){p.y=vh-p.h;p.vy*=-BOUNCE;p.vx*=0.82;p.rotV*=0.55;if(Math.abs(p.vy)<1)p.vy=0;}
           if(p.y<0){p.y=0;p.vy*=-BOUNCE;}
         }else{
