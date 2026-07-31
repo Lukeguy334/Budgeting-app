@@ -585,25 +585,25 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 }
 
 /* ── TOUR ── */
-.tour-overlay{position:fixed;inset:0;z-index:19000;pointer-events:all;}
-.tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:19001;}
 .tour-spotlight{position:fixed;z-index:19002;border-radius:10px;
-  box-shadow:0 0 0 4px var(--accent),0 0 0 9999px rgba(0,0,0,.65);
-  pointer-events:none;transition:all .35s cubic-bezier(.4,0,.2,1);}
-.tour-card{position:fixed;z-index:19003;background:var(--surface);border:1px solid var(--accent);
-  border-radius:14px;padding:20px 22px;max-width:300px;min-width:240px;
-  box-shadow:0 8px 32px rgba(0,0,0,.4);}
-.tour-step-label{font-size:10px;font-weight:600;letter-spacing:.12em;color:var(--accent);margin-bottom:6px;text-transform:uppercase;}
-.tour-title{font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;margin-bottom:6px;}
-.tour-desc{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:16px;}
+  box-shadow:0 0 0 4px #00C896,0 0 0 9999px rgba(0,0,0,.72);
+  pointer-events:none;transition:left .3s,top .3s,width .3s,height .3s;}
+/* Card is always bottom-center — avoids all positioning headaches */
+.tour-card{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:19003;
+  background:#1C2130;color:#F0EDE6;border:1px solid #00C896;
+  border-radius:14px;padding:18px 22px;width:420px;max-width:calc(100vw - 32px);
+  box-shadow:0 8px 40px rgba(0,0,0,.6);}
+.tour-step-label{font-size:10px;font-weight:600;letter-spacing:.12em;color:#00C896;margin-bottom:5px;text-transform:uppercase;}
+.tour-title{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:#F0EDE6;margin-bottom:5px;}
+.tour-desc{font-size:13px;color:#8899AA;line-height:1.6;margin-bottom:14px;}
 .tour-actions{display:flex;align-items:center;justify-content:space-between;}
-.tour-dots{display:flex;gap:5px;}
-.tour-dot{width:6px;height:6px;border-radius:50%;background:var(--border);}
-.tour-dot.active{background:var(--accent);}
+.tour-dots{display:flex;gap:5px;align-items:center;}
+.tour-dot{width:6px;height:6px;border-radius:50%;background:#2A3548;}
+.tour-dot.active{background:#00C896;}
 .tour-btn-row{display:flex;gap:8px;}
-.tour-btn{padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);}
-.tour-btn.primary{background:var(--accent);color:#0D0F14;border-color:transparent;}
-.tour-skip{font-size:11px;color:var(--muted);cursor:pointer;padding:4px;text-decoration:underline;text-underline-offset:3px;}
+.tour-btn{padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #2A3548;background:#232A3A;color:#F0EDE6;}
+.tour-btn.primary{background:#00C896;color:#0D0F14;border-color:transparent;}
+.tour-skip{font-size:11px;color:#5A6878;cursor:pointer;padding:4px;text-decoration:underline;text-underline-offset:3px;}
 </style>
 </head>
 <body>
@@ -1433,9 +1433,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">Dark is the default</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button id="theme-default-btn" onclick="setTheme('default')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">🌑 Default</button>
+          <button id="theme-default-btn" onclick="setTheme('default')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">🌑 Default (Dark)</button>
           <button id="theme-light-btn" onclick="setTheme('light')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">☀️ Light</button>
-          <button id="theme-dark-btn" onclick="setTheme('dark')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">🌌 Dark</button>
+          <button id="theme-dark-btn" onclick="setTheme('dark')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">🌌 Alternate Dark</button>
         </div>
       </div>
     </div>
@@ -3876,93 +3876,113 @@ function importData(event){
 
 // ── TUTORIAL TOUR ──
 function _buildTourSteps(){
-  const steps=[
-    {tab:'budget',  target:'income-display-card',title:'Real take-home pay',
-     desc:'Your actual take-home after federal tax, FICA, state tax, and benefit deductions. Every number in the app flows from this.'},
-    {tab:'budget',  target:'adj-card',           title:'Monthly adjustments',
-     desc:'Overtime, a bonus, or unpaid time off? Log it here. These are one-time entries — they reset automatically on the 1st of each month.'},
-    {tab:'budget',  target:'expense-grid',       title:'Budget categories',
-     desc:'Set your planned monthly spend for each category. Your savings score updates live as you fill them in.'},
-    {tab:'budget',  target:'savings-card',       title:'Monthly savings score',
-     desc:'Your estimated savings — take-home minus budgeted expenses. Rated from Catastrophic to Astronomical. Use "Log month end" to record actual savings.'},
-    {tab:'tracker', target:'log-form',        title:'Log actual expenses',
-     desc:'Record purchases as they happen. These amounts are used at month end to calculate what you actually saved vs. what you budgeted.'},
-    {tab:'savingslog',target:'tab-savingslog',      title:'Savings log',
-     desc:'Record money you actually move toward a savings goal — bank transfers, investment contributions, etc.'},
-    {tab:'alltime', target:'ats-bucket-grid',    title:'All-time savings',
-     desc:'Running balance for every goal: total contributions, gains, and withdrawals across all months.'},
-    {tab:'settings',target:'tab-settings',       title:'Settings',
-     desc:'Update income, state, PTO type, budget categories, and appearance anytime. Re-launch this tour here too.'},
+  const s=[
+    {tab:'budget',   id:'income-display-card', title:'Your real take-home',
+     desc:'Calculated after federal tax, FICA, and your state\'s exact rate. Every number in the app flows from this — the rest is just where it goes.'},
+    {tab:'budget',   id:'adj-card',            title:'Monthly adjustments',
+     desc:'One-time income or deductions this month — overtime, a bonus, or unpaid time off. These reset automatically on the 1st of every month.'},
+    {tab:'budget',   id:'expense-grid',        title:'Budget categories',
+     desc:'Set your planned monthly spend per category. Your savings score and savings amount update in real time as you fill these in.'},
+    {tab:'budget',   id:'savings-card',        title:'Savings score',
+     desc:'Take-home minus all your budgeted expenses. Rated from Catastrophic to Astronomical. Hit "Log month end" at month close to record your actual savings.'},
+    {tab:'tracker',  id:'log-form',            title:'Log expenses',
+     desc:'Record actual purchases as they happen. These logged amounts are what gets used at month end to calculate your true savings.'},
+    {tab:'savingslog',id:'tab-savingslog',     title:'Savings log',
+     desc:'Record money you actually move toward a goal — a bank transfer, investment contribution, etc. Each entry is tied to one of your goals.'},
+    {tab:'alltime',  id:'ats-bucket-grid',     title:'All-time savings',
+     desc:'Your running balance for every savings goal across all months. See total contributions, gains, and withdrawals at a glance.'},
+    {tab:'loans',    id:'loans-grid',          title:'Loan tracker',
+     desc:'Add a mortgage, car loan, or student loan. Monthly payments automatically lock into your budget so they\'re always accounted for.'},
+    {tab:'settings', id:'tab-settings',        title:'Settings',
+     desc:'Update income, state, PTO setup, categories, and appearance here anytime. Changes apply instantly everywhere in the app.'},
   ];
   if(user?.profile?.hasPTO){
-    steps.splice(7,0,{tab:'pto',target:'pto-hero',title:'PTO tracker',
-     desc:'Track PTO balance, accrual, and usage. Supports accruing, frontloaded, and unlimited. Warns you before hours expire at year end.'});
+    s.splice(7,0,{tab:'pto',id:'pto-hero',title:'PTO tracker',
+     desc:'Track your PTO balance, accrual, and usage all in one place. Works with accruing, frontloaded, and unlimited PTO types.'});
   }
-  return steps;
+  return s;
 }
+
 let _tourStep=0,_tourActive=false,_tourSteps=[];
+let _tourScrollPos=0;
 
 function startTour(){
   _tourStep=0;_tourActive=true;
   _tourSteps=_buildTourSteps();
   document.querySelectorAll('.tour-spotlight,.tour-card').forEach(e=>e.remove());
-  const tc=document.querySelector('.tab-content');if(tc)tc.style.overflow='hidden';
-  renderTourStep();
+  _renderTour();
 }
 
-function renderTourStep(){
+function _renderTour(){
   document.querySelectorAll('.tour-spotlight,.tour-card').forEach(e=>e.remove());
-  if(!_tourActive||_tourStep>=_tourSteps.length){endTour();return;}
+  if(!_tourActive||_tourStep>=_tourSteps.length){_endTour();return;}
   const s=_tourSteps[_tourStep];
+
+  // Step 1: switch to correct tab
   showTab(s.tab);
+
+  // Step 2: wait for tab to fully render
   setTimeout(()=>{
-    let target=document.getElementById(s.target)||document.querySelector('.'+s.target);
-    if(!target){console.warn('Tour: not found:',s.target);_tourStep++;renderTourStep();return;}
-    // Scroll within tab-content to show the element
-    const tc=document.querySelector('.tab-content');
-    if(tc){tc.scrollTop=Math.max(0,(target.offsetTop||0)-80);}
-    setTimeout(()=>{
+    const target=document.getElementById(s.id);
+    if(!target){
+      // Element missing — skip this step
+      _tourStep++;_renderTour();return;
+    }
+
+    // Step 3: unlock body scroll, scroll element into view
+    document.body.style.overflow='';
+    target.scrollIntoView({behavior:'instant',block:'center'});
+
+    // Step 4: wait for scroll to settle (two animation frames)
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+
+      // Step 5: now lock scroll so user can't scroll away
+      _tourScrollPos=window.scrollY;
+      document.body.style.overflow='hidden';
+
+      // Step 6: get final position and draw spotlight
       const r=target.getBoundingClientRect();
-      if(r.width===0){_tourStep++;renderTourStep();return;}
-      const pad=10;
-      const spot=document.createElement('div');spot.className='tour-spotlight';
-      spot.style.cssText=`left:${Math.max(0,r.left-pad)}px;top:${Math.max(0,r.top-pad)}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;`;
+      const pad=8;
+
+      const spot=document.createElement('div');
+      spot.className='tour-spotlight';
+      spot.style.left=(r.left-pad)+'px';
+      spot.style.top=(r.top-pad)+'px';
+      spot.style.width=(r.width+pad*2)+'px';
+      spot.style.height=(r.height+pad*2)+'px';
       document.body.appendChild(spot);
-      const card=document.createElement('div');card.className='tour-card';
+
+      // Step 7: build card (always bottom-center, styles are hardcoded)
       const dots=_tourSteps.map((_,i)=>`<div class="tour-dot${i===_tourStep?' active':''}"></div>`).join('');
+      const card=document.createElement('div');
+      card.className='tour-card';
       card.innerHTML=`
         <div class="tour-step-label">Step ${_tourStep+1} of ${_tourSteps.length}</div>
         <div class="tour-title">${s.title}</div>
         <div class="tour-desc">${s.desc}</div>
         <div class="tour-actions">
           <div class="tour-dots">${dots}</div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span class="tour-skip" onclick="endTour()">End tour</span>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="tour-skip" onclick="_endTour()">End tour</span>
             <div class="tour-btn-row">
-              ${_tourStep>0?'<button class="tour-btn" onclick="tourPrev()">←</button>':''}
-              <button class="tour-btn primary" onclick="tourNext()">${_tourStep===_tourSteps.length-1?'Done ✓':'Next →'}</button>
+              ${_tourStep>0?'<button class="tour-btn" onclick="_tourPrev()">← Back</button>':''}
+              <button class="tour-btn primary" onclick="_tourNext()">${_tourStep===_tourSteps.length-1?'Done ✓':'Next →'}</button>
             </div>
           </div>
         </div>`;
-      const cardW=310,cardH=210;
-      let top=r.bottom+pad+12,left=r.left;
-      if(top+cardH>window.innerHeight-10)top=Math.max(10,r.top-cardH-pad-12);
-      if(left+cardW>window.innerWidth-10)left=window.innerWidth-cardW-10;
-      if(left<10)left=10;
-      card.style.top=top+'px';card.style.left=left+'px';
       document.body.appendChild(card);
-    },220);
-  },500);
+    }));
+  },550);
 }
 
-function tourNext(){_tourStep++;renderTourStep();}
-function tourPrev(){_tourStep=Math.max(0,_tourStep-1);renderTourStep();}
-function endTour(){
+function _tourNext(){_tourStep++;_renderTour();}
+function _tourPrev(){_tourStep=Math.max(0,_tourStep-1);_renderTour();}
+function _endTour(){
   _tourActive=false;
+  document.body.style.overflow='';
   document.querySelectorAll('.tour-spotlight,.tour-card').forEach(e=>e.remove());
-  const tc=document.querySelector('.tab-content');if(tc)tc.style.overflow='';
   if(user&&!user.profile.tourSeen){user.profile.tourSeen=true;saveUser();}
-  showToast('Tour done! Find it again in Settings → 🗺️ Take Tour','good');
+  showToast('Tour done! Re-launch anytime via Settings → 🗺️ Take Tour','good');
 }
 
 // ── BOOT — restore Supabase session ──
