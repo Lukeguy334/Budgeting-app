@@ -39,6 +39,38 @@
   --text:#1A202C;--muted:#64748B;--accent:#00A87A;--accent-dim:#D1FAF0;
   --good:#059669;--danger:#DC2626;--caution:#D97706;--blue:#2563EB;--purple:#7C3AED;
 }
+/* Light mode component overrides */
+[data-theme="light"] .tab-bar{background:rgba(220,226,238,.97)!important;border-bottom-color:#C5CDD8;}
+[data-theme="light"] .tab-btn{color:#4A5568;}
+[data-theme="light"] .tab-btn.active{color:var(--accent)!important;}
+[data-theme="light"] .app-logo-text{color:#1A202C!important;}
+[data-theme="light"] .nw-logo-text{color:#1A202C!important;}
+[data-theme="light"] .nw-logo-text span{color:var(--accent)!important;}
+/* Green buttons → white text */
+[data-theme="light"] .btn-save,[data-theme="light"] .btn-primary,[data-theme="light"] .log-btn,
+[data-theme="light"] .add-custom-btn,[data-theme="light"] .ob-next-btn{color:#FFFFFF!important;}
+/* Savings card */
+[data-theme="light"] .savings-card{background:linear-gradient(135deg,#C6F6E9,#A7F3D0)!important;border-color:rgba(0,168,122,.3)!important;}
+[data-theme="light"] .savings-amount,[data-theme="light"] .s-val.great,
+[data-theme="light"] .s-val.good,[data-theme="light"] .s-val.excellent,[data-theme="light"] .s-val.astronomical{color:#065F46!important;}
+[data-theme="light"] .savings-card .s-val{color:#1A202C!important;}
+/* Record button — teal instead of purple */
+[data-theme="light"] .log-btn.purple{background:var(--accent)!important;color:#fff!important;}
+/* Income display */
+[data-theme="light"] .income-display-card{background:#fff;border-color:#D1D9E6;}
+[data-theme="light"] .income-stat-val.accent{color:var(--accent)!important;}
+/* Cards */
+[data-theme="light"] .expense-card,[data-theme="light"] .loan-card{background:#fff;border-color:#D1D9E6;}
+[data-theme="light"] .cbadge.good{background:rgba(5,150,105,.12);color:#065F46;}
+[data-theme="light"] .cbadge.caution{background:rgba(217,119,6,.12);color:#92400E;}
+[data-theme="light"] .cbadge.danger{background:rgba(220,38,38,.1);color:#991B1B;}
+
+/* ── Alternate Dark mode ── */
+[data-theme="dark"]{
+  --bg:#060B18;--surface:#0D1526;--surface2:#152035;--border:#1E3050;
+  --text:#E8F0FF;--muted:#5080A0;--accent:#00D4AA;--accent-dim:#001A14;
+  --good:#00D4AA;--danger:#FF6B6B;--caution:#FFB347;--blue:#60AEFF;--purple:#B08BFF;
+}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
 .screen{display:none;min-height:100vh;}
 .screen.active{display:flex;flex-direction:column;}
@@ -1308,7 +1340,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   <div class="tab-page" id="tab-pto">
     <div class="page-heading"><h1>NetWorth · PTO</h1><h2>Your time off balance</h2></div>
     <div class="pto-warning-box" id="pto-warning-box"></div>
-    <div class="pto-hero" id="pto-hero"></div>
+    <div class="pto-hero" id="pto-hero" id="pto-hero" id="pto-hero"></div>
     <div class="card" style="padding:14px 18px;">
       <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;margin-bottom:6px;">
         <div id="pto-accrual-bar" style="height:100%;border-radius:4px;background:var(--accent);width:0%;transition:width .4s;"></div>
@@ -1400,9 +1432,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
           <div style="font-size:13px;font-weight:500;">Theme</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">Dark is the default</div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="theme-btn" id="theme-dark-btn" onclick="setTheme('dark')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">🌙 Dark</button>
-          <button class="theme-btn" id="theme-light-btn" onclick="setTheme('light')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">☀️ Light</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="theme-default-btn" onclick="setTheme('default')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">🌑 Default</button>
+          <button id="theme-light-btn" onclick="setTheme('light')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">☀️ Light</button>
+          <button id="theme-dark-btn" onclick="setTheme('dark')" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text);">🌌 Dark</button>
         </div>
       </div>
     </div>
@@ -2061,27 +2094,10 @@ function showToast(msg,type='info'){
   setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)';setTimeout(()=>t.remove(),300);},3200);
 }
 
-function checkEndOfMonth(){
-  // Show end-of-month prompt on last 2 days of month
-  const now=new Date();const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
-  if(now.getDate()<lastDay-1)return;
-  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  if(user.profile.eomPromptShown===thisMonth)return;
-  setTimeout(()=>{
-    if(confirm('📅 Month ending soon! Would you like to log this month\'s savings now?\n\nThis will calculate: take-home − actual logged expenses this month.')){
-      logMonthEndSavings();user.profile.eomPromptShown=thisMonth;saveUser();
-    } else {user.profile.eomPromptShown=thisMonth;saveUser();}
-  },1500);
-}
-
-function logMonthEndSavings(){
+function _getMonthSavingsAmount(){
   const now=new Date();
   const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  // Actual logged expenses this month
-  const actualSpent=(user.data.logs||[])
-    .filter(l=>l.date&&l.date.startsWith(thisMonth))
-    .reduce((s,l)=>s+(l.amount||0),0);
-  // Monthly take-home (with adjustments)
+  const actualSpent=(user.data.logs||[]).filter(l=>l.date&&l.date.startsWith(thisMonth)).reduce((s,l)=>s+(l.amount||0),0);
   const gross=getSalary();const gm=gross/12;
   const bm=calcBenefitsMonthly(gm);
   const taxableGross=Math.max(0,gross-bm*12);
@@ -2089,22 +2105,71 @@ function logMonthEndSavings(){
   const baseMonthly=netAnnual/12;
   const{net:adjNet}=getNetAdjustment();
   const mNet=baseMonthly+adjNet;
-  const actualSavings=mNet-actualSpent;
-  const isOver=actualSavings<0;
-  const label=isOver?`Over budget — ${thisMonth}`:`Month end savings — ${thisMonth}`;
-  // Log to first active savings goal
+  return{amount:mNet-actualSpent,mNet,actualSpent,thisMonth};
+}
+
+function checkEndOfMonth(){
+  const now=new Date();const lastDay=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  if(now.getDate()<lastDay-1)return;
+  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  if(user.profile.eomPromptShown===thisMonth)return;
+  const{amount,mNet,actualSpent}=_getMonthSavingsAmount();
+  setTimeout(()=>showSavingsModal(amount,mNet,actualSpent,()=>{
+    user.profile.eomPromptShown=thisMonth;saveUser();
+  }),1500);
+}
+
+function logMonthEndSavings(){
+  const{amount,mNet,actualSpent,thisMonth}=_getMonthSavingsAmount();
+  showSavingsModal(amount,mNet,actualSpent,null);
+}
+
+function showSavingsModal(amount,mNet,actualSpent,onDone){
+  const isOver=amount<0;
   const goals=getActiveGoals();
-  if(!goals.length){showToast('No savings goals set up yet.','info');return;}
+  const existingModal=document.getElementById('savings-confirm-modal');
+  if(existingModal)existingModal.remove();
+  const modal=document.createElement('div');
+  modal.id='savings-confirm-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9500;display:flex;align-items:center;justify-content:center;';
+  const breakdown=`
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:12px;font-family:'JetBrains Mono',monospace;line-height:1.8;">
+      <div>Take-home: <span style="color:var(--accent)">${fmt(mNet)}</span></div>
+      <div>Expenses logged: <span style="color:var(--danger)">- ${fmt(actualSpent)}</span></div>
+      <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px;">${isOver?'Over budget':'Left over'}: <strong style="color:${isOver?'var(--danger)':'var(--accent)'}">${isOver?'-':''}${fmt(Math.abs(amount))}</strong></div>
+    </div>`;
+  modal.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 26px;max-width:380px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,.5);">
+    <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;">${isOver?'⚠️ Over budget this month':'📅 Log this month\'s savings?'}</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:4px;">${isOver?'You spent more than your take-home. Log this as an over-budget entry?':'Save your leftover budget into your savings log?'}</div>
+    ${breakdown}
+    ${!goals.length?'<div style="font-size:12px;color:var(--danger);margin-bottom:12px;">⚠️ No savings goals found — set one up in Settings first.</div>':''}
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
+      <button onclick="document.getElementById('savings-confirm-modal').remove()" style="padding:9px 20px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;font-weight:600;">No thanks</button>
+      ${goals.length?`<button onclick="document.getElementById('savings-confirm-modal').remove();_doLogSavings(${amount});if(typeof arguments[0]==='function')arguments[0]();" style="padding:9px 20px;border-radius:9px;border:none;background:${isOver?'var(--danger)':'var(--accent)'};color:#fff;cursor:pointer;font-size:13px;font-weight:600;">Yes — log ${isOver?'over-budget':fmt(Math.abs(amount))}</button>`:''}
+    </div>
+  </div>`;
+  // Fix: use closure for onDone
+  modal.querySelector('.yes-btn')?.addEventListener('click',()=>onDone?.());
+  const yesBtn=modal.querySelector('button:last-child');
+  if(yesBtn&&goals.length)yesBtn.onclick=()=>{modal.remove();_doLogSavings(amount);onDone?.();};
+  document.body.appendChild(modal);
+}
+
+function _doLogSavings(amount){
+  const now=new Date();
+  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const isOver=amount<0;
+  const goals=getActiveGoals();
+  if(!goals.length)return;
   user.data.savingsLogs.unshift({
-    id:Date.now(),
-    amount:Math.abs(actualSavings),
-    desc:label,
+    id:Date.now(),amount:Math.abs(amount),
+    desc:isOver?`Over budget — ${thisMonth}`:`Month savings — ${thisMonth}`,
     catId:goals[0].id,
     date:new Date().toISOString().slice(0,10),
     type:isOver?'withdrawal':'contribution'
   });
   saveUser();renderSavingsLog();
-  showToast(isOver?`⚠️ Over budget by ${fmt(Math.abs(actualSavings))} logged.`:`✅ ${fmt(actualSavings)} savings logged for ${thisMonth}`,'good');
+  showToast(isOver?`⚠️ Over budget by ${fmt(Math.abs(amount))} logged`:`✅ ${fmt(amount)} savings logged for ${thisMonth}`,'good');
 }
 
 function initApp(){
@@ -2369,11 +2434,7 @@ function showTab(name){
   if(name==='alltime')renderAllTime();
   if(name==='loans')renderLoans();
   if(name==='pto')renderPTO();
-  if(name==='settings'){buildSettingsCatsGrid();const t=user.profile.theme||'dark';
-    const db=document.getElementById('theme-dark-btn');const lb=document.getElementById('theme-light-btn');
-    if(db){db.style.background=t==='dark'?'var(--accent)':'var(--surface2)';db.style.color=t==='dark'?'#0D0F14':'var(--text)';}
-    if(lb){lb.style.background=t==='light'?'var(--accent)':'var(--surface2)';lb.style.color=t==='light'?'#fff':'var(--text)';}
-  }
+  if(name==='settings'){buildSettingsCatsGrid();setTheme(user.profile.theme||'default');}
 }
 
 function buildMonthFilter(id){
@@ -2835,16 +2896,22 @@ function saveCategories(){
 
 function setTheme(t){
   user.profile.theme=t;
-  document.documentElement.setAttribute('data-theme',t);
-  document.getElementById('theme-dark-btn').style.background=t==='dark'?'var(--accent)':'var(--surface2)';
-  document.getElementById('theme-dark-btn').style.color=t==='dark'?'#0D0F14':'var(--text)';
-  document.getElementById('theme-light-btn').style.background=t==='light'?'var(--accent)':'var(--surface2)';
-  document.getElementById('theme-light-btn').style.color=t==='light'?'#fff':'var(--text)';
+  document.documentElement.removeAttribute('data-theme');
+  if(t!=='default')document.documentElement.setAttribute('data-theme',t);
+  ['default','light','dark'].forEach(id=>{
+    const btn=document.getElementById('theme-'+id+'-btn');
+    if(!btn)return;
+    const active=t===id;
+    btn.style.background=active?'var(--accent)':'var(--surface2)';
+    btn.style.color=active?(id==='light'?'#fff':'#0D0F14'):'var(--text)';
+    btn.style.border=active?'1px solid var(--accent)':'1px solid var(--border)';
+  });
   saveUser();
 }
 function applyTheme(){
-  const t=user.profile.theme||'dark';
-  document.documentElement.setAttribute('data-theme',t);
+  const t=user.profile.theme||'default';
+  document.documentElement.removeAttribute('data-theme');
+  if(t!=='default')document.documentElement.setAttribute('data-theme',t);
 }
 function exportData(){
   const blob=new Blob([JSON.stringify(user.data,null,2)],{type:'application/json'});
@@ -3808,70 +3875,84 @@ function importData(event){
 })();
 
 // ── TUTORIAL TOUR ──
-const TOUR_STEPS=[
-  {tab:'budget',  target:'income-display-card', title:'Your real take-home',   desc:'Calculated after federal, state, and FICA taxes for your exact state. Everything in the app flows from this number.'},
-  {tab:'budget',  target:'adj-card',         title:'Monthly adjustments',   desc:'Log overtime, bonuses, or unpaid time off. These apply to this month only and reset automatically.'},
-  {tab:'budget',  target:'expense-grid',        title:'Budget categories',     desc:'Set how much you plan to spend in each category. Watch your savings score update live.'},
-  {tab:'budget',  target:'savings-card',        title:'Savings score',         desc:'The difference between your take-home and total budgeted expenses. Rated from Catastrophic to Astronomical.'},
-  {tab:'tracker', target:'log-form',            title:'Log expenses',          desc:'Record actual purchases as they happen. At month end, your savings are calculated from what you actually spent.'},
-  {tab:'savingslog',target:'sl-log-card',       title:'Savings log',           desc:'Track money you move toward each savings goal — emergency fund, investments, or whatever you set up.'},
-  {tab:'alltime', target:'ats-bucket-grid',     title:'All-time totals',       desc:'Your complete savings history across all goals. See contributions, gains, and withdrawals over time.'},
-  {tab:'settings',target:'tab-settings',   title:'Settings',              desc:'Update your income, state, PTO type, or categories anytime. Changes apply instantly across every tab.'},
-];
-let _tourStep=0,_tourActive=false;
+function _buildTourSteps(){
+  const steps=[
+    {tab:'budget',  target:'income-display-card',title:'Real take-home pay',
+     desc:'Your actual take-home after federal tax, FICA, state tax, and benefit deductions. Every number in the app flows from this.'},
+    {tab:'budget',  target:'adj-card',           title:'Monthly adjustments',
+     desc:'Overtime, a bonus, or unpaid time off? Log it here. These are one-time entries — they reset automatically on the 1st of each month.'},
+    {tab:'budget',  target:'expense-grid',       title:'Budget categories',
+     desc:'Set your planned monthly spend for each category. Your savings score updates live as you fill them in.'},
+    {tab:'budget',  target:'savings-card',       title:'Monthly savings score',
+     desc:'Your estimated savings — take-home minus budgeted expenses. Rated from Catastrophic to Astronomical. Use "Log month end" to record actual savings.'},
+    {tab:'tracker', target:'log-form',        title:'Log actual expenses',
+     desc:'Record purchases as they happen. These amounts are used at month end to calculate what you actually saved vs. what you budgeted.'},
+    {tab:'savingslog',target:'tab-savingslog',      title:'Savings log',
+     desc:'Record money you actually move toward a savings goal — bank transfers, investment contributions, etc.'},
+    {tab:'alltime', target:'ats-bucket-grid',    title:'All-time savings',
+     desc:'Running balance for every goal: total contributions, gains, and withdrawals across all months.'},
+    {tab:'settings',target:'tab-settings',       title:'Settings',
+     desc:'Update income, state, PTO type, budget categories, and appearance anytime. Re-launch this tour here too.'},
+  ];
+  if(user?.profile?.hasPTO){
+    steps.splice(7,0,{tab:'pto',target:'pto-hero',title:'PTO tracker',
+     desc:'Track PTO balance, accrual, and usage. Supports accruing, frontloaded, and unlimited. Warns you before hours expire at year end.'});
+  }
+  return steps;
+}
+let _tourStep=0,_tourActive=false,_tourSteps=[];
 
 function startTour(){
   _tourStep=0;_tourActive=true;
-  // Remove any existing tour elements
-  document.querySelectorAll('.tour-overlay,.tour-spotlight,.tour-card').forEach(e=>e.remove());
+  _tourSteps=_buildTourSteps();
+  document.querySelectorAll('.tour-spotlight,.tour-card').forEach(e=>e.remove());
+  const tc=document.querySelector('.tab-content');if(tc)tc.style.overflow='hidden';
   renderTourStep();
 }
 
 function renderTourStep(){
-  document.querySelectorAll('.tour-overlay,.tour-spotlight,.tour-card').forEach(e=>e.remove());
-  if(!_tourActive||_tourStep>=TOUR_STEPS.length){endTour();return;}
-  const s=TOUR_STEPS[_tourStep];
-  // Switch to the right tab
+  document.querySelectorAll('.tour-spotlight,.tour-card').forEach(e=>e.remove());
+  if(!_tourActive||_tourStep>=_tourSteps.length){endTour();return;}
+  const s=_tourSteps[_tourStep];
   showTab(s.tab);
   setTimeout(()=>{
-    const target=document.getElementById(s.target)||document.querySelector('.'+s.target);
-    if(!target){_tourStep++;renderTourStep();return;}
-    // Scroll target into view
-    target.scrollIntoView({behavior:'smooth',block:'center'});
+    let target=document.getElementById(s.target)||document.querySelector('.'+s.target);
+    if(!target){console.warn('Tour: not found:',s.target);_tourStep++;renderTourStep();return;}
+    // Scroll within tab-content to show the element
+    const tc=document.querySelector('.tab-content');
+    if(tc){tc.scrollTop=Math.max(0,(target.offsetTop||0)-80);}
     setTimeout(()=>{
       const r=target.getBoundingClientRect();
-      const pad=8;
-      // Spotlight
+      if(r.width===0){_tourStep++;renderTourStep();return;}
+      const pad=10;
       const spot=document.createElement('div');spot.className='tour-spotlight';
-      spot.style.cssText=`left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;`;
+      spot.style.cssText=`left:${Math.max(0,r.left-pad)}px;top:${Math.max(0,r.top-pad)}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;`;
       document.body.appendChild(spot);
-      // Card
       const card=document.createElement('div');card.className='tour-card';
-      const dots=TOUR_STEPS.map((_,i)=>`<div class="tour-dot${i===_tourStep?' active':''}"></div>`).join('');
+      const dots=_tourSteps.map((_,i)=>`<div class="tour-dot${i===_tourStep?' active':''}"></div>`).join('');
       card.innerHTML=`
-        <div class="tour-step-label">Step ${_tourStep+1} of ${TOUR_STEPS.length}</div>
+        <div class="tour-step-label">Step ${_tourStep+1} of ${_tourSteps.length}</div>
         <div class="tour-title">${s.title}</div>
         <div class="tour-desc">${s.desc}</div>
         <div class="tour-actions">
           <div class="tour-dots">${dots}</div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <span class="tour-skip" onclick="endTour()">Skip</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="tour-skip" onclick="endTour()">End tour</span>
             <div class="tour-btn-row">
               ${_tourStep>0?'<button class="tour-btn" onclick="tourPrev()">←</button>':''}
-              <button class="tour-btn primary" onclick="tourNext()">${_tourStep===TOUR_STEPS.length-1?'Done ✓':'Next →'}</button>
+              <button class="tour-btn primary" onclick="tourNext()">${_tourStep===_tourSteps.length-1?'Done ✓':'Next →'}</button>
             </div>
           </div>
         </div>`;
-      // Position card above or below target
-      const cardW=300,cardH=180;
-      let top=r.bottom+pad+12;let left=r.left;
-      if(top+cardH>window.innerHeight-20)top=r.top-cardH-pad-12;
-      if(left+cardW>window.innerWidth-20)left=window.innerWidth-cardW-20;
+      const cardW=310,cardH=210;
+      let top=r.bottom+pad+12,left=r.left;
+      if(top+cardH>window.innerHeight-10)top=Math.max(10,r.top-cardH-pad-12);
+      if(left+cardW>window.innerWidth-10)left=window.innerWidth-cardW-10;
       if(left<10)left=10;
-      card.style.top=Math.max(10,top)+'px';card.style.left=left+'px';
+      card.style.top=top+'px';card.style.left=left+'px';
       document.body.appendChild(card);
-    },350);
-  },280);
+    },220);
+  },500);
 }
 
 function tourNext(){_tourStep++;renderTourStep();}
@@ -3879,9 +3960,9 @@ function tourPrev(){_tourStep=Math.max(0,_tourStep-1);renderTourStep();}
 function endTour(){
   _tourActive=false;
   document.querySelectorAll('.tour-spotlight,.tour-card').forEach(e=>e.remove());
-  showToast('Tour complete! Find it again in Settings.','good');
-  // Mark tour as seen
-  if(user){user.profile.tourSeen=true;saveUser();}
+  const tc=document.querySelector('.tab-content');if(tc)tc.style.overflow='';
+  if(user&&!user.profile.tourSeen){user.profile.tourSeen=true;saveUser();}
+  showToast('Tour done! Find it again in Settings → 🗺️ Take Tour','good');
 }
 
 // ── BOOT — restore Supabase session ──
