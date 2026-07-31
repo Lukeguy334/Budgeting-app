@@ -426,6 +426,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 @keyframes nw-explode{0%{transform:translate(-50%,-50%) scale(0);opacity:1;}100%{transform:translate(-50%,-50%) scale(1);opacity:0;}}
 @keyframes nw-ring{0%{transform:translate(-50%,-50%) scale(0);opacity:.9;}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0;}}
 @keyframes nw-shake{0%,100%{transform:translate(0,0);}15%{transform:translate(-5px,3px);}30%{transform:translate(5px,-3px);}45%{transform:translate(-4px,2px);}60%{transform:translate(3px,-2px);}75%{transform:translate(-2px,1px);}}
+@keyframes nw-bigshake{0%,100%{transform:translate(0,0);}10%{transform:translate(-14px,8px);}20%{transform:translate(14px,-10px);}30%{transform:translate(-10px,14px);}40%{transform:translate(12px,-8px);}50%{transform:translate(-8px,12px);}60%{transform:translate(10px,-6px);}70%{transform:translate(-6px,8px);}80%{transform:translate(8px,-4px);}90%{transform:translate(-4px,4px);}}
+.nw-bigshaking{animation:nw-bigshake .8s ease-out;}
 .nw-shaking{animation:nw-shake .35s ease-out;}
 .lp-nav-logo{display:flex;align-items:center;gap:10px;}
 .lp-nav-actions{display:flex;align-items:center;gap:12px;}
@@ -2709,7 +2711,7 @@ function importData(event){
 
 // ── EASTER EGG — type "networth" for gravity chaos ──
 (function(){
-  let _buf='',_active=false,_items=[],_bombs=[],_confetti=[];
+  let _buf='',_active=false,_items=[],_bombs=[];
   const _mhist=[];
   let _mouseX=window.innerWidth/2,_mouseY=window.innerHeight/2;
   // Mode flags
@@ -2721,7 +2723,7 @@ function importData(event){
 
   // Cleanup — called when leaving the landing page
   window._eggCleanup=function(){
-    _active=false;_items=[];_bombs=[];_confetti=[];
+    _active=false;_items=[];_bombs=[];
     _magnetMode=false;_freezeMode=false;_tornadoMode=false;_rainbowMode=false;
     _windX=0;_windY=0;_earthquake=0;_gravMode=0;_blackHole=null;
     document.querySelectorAll('.nw-egg-el').forEach(el=>el.remove());
@@ -2744,7 +2746,7 @@ function importData(event){
       case 'Space':     e.preventDefault();_dropBomb();break;
       case 'KeyG':      _cycleGravity();break;
       case 'KeyB':      _spawnBlackHole();break;
-      case 'KeyW':      _windGust();break;
+      case 'KeyW':      _repulsorBlast();break;
       case 'KeyM':      _toggleMagnet();break;
       case 'KeyF':      _toggleFreeze();break;
       case 'KeyT':      _toggleTornado();break;
@@ -2752,6 +2754,8 @@ function importData(event){
       case 'KeyE':      _triggerEarthquake();break;
       case 'KeyC':      _dropConfetti();break;
       case 'ArrowUp':   e.preventDefault();_launchAll();break;
+      case 'KeyN':      _nuke();break;
+      case 'KeyR':      if(e.shiftKey){e.preventDefault();location.reload();}break;
     }
   });
 
@@ -2868,19 +2872,52 @@ function importData(event){
     void landing?.offsetWidth; // reflow to restart animation
     landing?.classList.add('nw-shaking');
     setTimeout(()=>landing?.classList.remove('nw-shaking'),400);
-    // Blast force on buttons
-    const RADIUS=350,FORCE=28;
+    // Blast force on physics items
+    const RADIUS=480,FORCE=48;
     for(const p of _items){
       const bx=p.x+p.w/2,by=p.y+p.h/2;
       const dx=bx-cx,dy=by-cy;
       const dist=Math.sqrt(dx*dx+dy*dy)||1;
       if(dist<RADIUS){
         const str=FORCE*(1-dist/RADIUS);
-        const nx=dx/dist,ny=dy/dist;
-        p.vx+=nx*str;
-        p.vy+=ny*str-str*0.6; // bias upward
+        p.vx+=(dx/dist)*str;p.vy+=(dy/dist)*str-str*0.6;
         p.rotV+=(Math.random()-.5)*str*0.7;
       }
+    }
+    // Also break any still-attached landing page buttons nearby
+    const _pg=document.getElementById('screen-landing');
+    if(_pg){
+      [..._pg.querySelectorAll('button')].forEach(btn=>{
+        if(btn.style.visibility==='hidden')return; // already launched
+        const r=btn.getBoundingClientRect();
+        if(r.width===0)return;
+        const bdx=(r.left+r.width/2)-cx,bdy=(r.top+r.height/2)-cy;
+        const bd=Math.sqrt(bdx*bdx+bdy*bdy)||1;
+        if(bd<RADIUS+100){
+          // Break it free!
+          const cs=getComputedStyle(btn);
+          const el2=document.createElement('button');
+          el2.className='nw-egg-el';el2.textContent=btn.textContent;
+          el2.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;
+            width:${r.width}px;height:${r.height}px;margin:0;z-index:9999;cursor:grab;
+            border-radius:${cs.borderRadius};background:${cs.background};color:${cs.color};
+            font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};
+            border:${cs.border};padding:${cs.padding};pointer-events:auto;user-select:none;`;
+          document.body.appendChild(el2);
+          btn.style.visibility='hidden';
+          const str=(FORCE+40)*(1-bd/(RADIUS+100));
+          _items.push({el:el2,x:r.left,y:r.top,w:r.width,h:r.height,
+            vx:(bdx/bd)*str,vy:(bdy/bd)*str-str*0.7,
+            rot:0,rotV:(Math.random()-.5)*12,dragging:false,grabOffX:0,grabOffY:0});
+          el2.addEventListener('mousedown',e=>{
+            const p2=_items.find(x=>x.el===el2);if(!p2)return;
+            p2.dragging=true;p2.grabOffX=e.clientX-p2.x;p2.grabOffY=e.clientY-p2.y;
+            p2.vx=0;p2.vy=0;el2.style.cursor='grabbing';
+            el2.style.boxShadow='0 12px 40px rgba(0,200,150,.45)';
+            _mhist.length=0;e.preventDefault();e.stopPropagation();
+          });
+        }
+      });
     }
   }
 
@@ -2892,11 +2929,13 @@ function importData(event){
     hud.style.cssText='position:fixed;bottom:20px;right:20px;background:rgba(13,15,20,.92);border:1px solid #232A3A;border-radius:14px;padding:14px 16px;z-index:10002;font-family:JetBrains Mono,monospace;font-size:11px;color:#4A5568;line-height:2;min-width:230px;backdrop-filter:blur(8px);';
     hud.innerHTML=`<div style="color:#00C896;font-weight:700;margin-bottom:6px;font-family:Outfit,sans-serif;font-size:13px;">🎮 GAME MODE</div>
 <div><span style="color:#F0EDE6">SPACE</span> Bomb &nbsp; <span style="color:#F0EDE6">G</span> Gravity</div>
-<div><span style="color:#F0EDE6">B</span> Black hole &nbsp; <span style="color:#F0EDE6">W</span> Wind gust</div>
+<div><span style="color:#F0EDE6">B</span> Black hole &nbsp; <span style="color:#F0EDE6">W</span> Repulsor</div>
 <div><span style="color:#F0EDE6">M</span> Magnet &nbsp; <span style="color:#F0EDE6">F</span> Freeze</div>
 <div><span style="color:#F0EDE6">T</span> Tornado &nbsp; <span style="color:#F0EDE6">R</span> Rainbow</div>
 <div><span style="color:#F0EDE6">E</span> Earthquake &nbsp; <span style="color:#F0EDE6">C</span> Confetti</div>
 <div><span style="color:#F0EDE6">↑</span> Launch all up</div>
+<div style="color:#F87171"><span style="color:#F87171">N</span> ☢️ NUKE EVERYTHING</div>
+<div style="color:#4A5568;margin-top:4px;font-size:10px;">Shift+R to reset page</div>
 <div id="nw-hud-status" style="color:#00C896;margin-top:6px;min-height:16px;"></div>`;
     document.body.appendChild(hud);
   }
@@ -2937,12 +2976,27 @@ function importData(event){
     _blackHole={x:_mouseX,y:_mouseY,el,ring,t:0,maxT:240};
     _toast('🌑 Black hole spawned at cursor!');_hudStatus('🌑 Black hole active — implodes soon…');
   }
-  function _windGust(){
-    const ang=Math.random()*Math.PI*2;
-    _windX=Math.cos(ang)*1.8;_windY=Math.sin(ang)*0.6;
-    const dirs=['➡️','↗️','⬆️','↖️','⬅️','↙️','⬇️','↘️'];
-    const di=Math.round(ang/(Math.PI/4))%8;
-    _toast(dirs[di]+' Wind gust!');_hudStatus(dirs[di]+' Wind active');
+  function _repulsorBlast(){
+    // Instant outward push from cursor — like a shockwave
+    const FORCE=22,RADIUS=400;
+    for(const p of _items){
+      const bx=p.x+p.w/2,by=p.y+p.h/2;
+      const dx=bx-_mouseX,dy=by-_mouseY;
+      const d=Math.sqrt(dx*dx+dy*dy)||1;
+      if(d<RADIUS){
+        const str=FORCE*(1-d/RADIUS);
+        p.vx+=dx/d*str;p.vy+=dy/d*str-str*0.2;
+        p.rotV+=(Math.random()-.5)*str*0.4;
+      }
+    }
+    // Visual ring
+    const ring=document.createElement('div');ring.className='nw-egg-el';
+    ring.style.cssText=`position:fixed;left:${_mouseX}px;top:${_mouseY}px;
+      width:${RADIUS*2}px;height:${RADIUS*2}px;border-radius:50%;
+      border:3px solid rgba(96,165,250,.7);pointer-events:none;z-index:9998;
+      animation:nw-ring .5s ease-out forwards;`;
+    document.body.appendChild(ring);setTimeout(()=>ring.remove(),600);
+    _toast('💥 Repulsor blast!');_hudStatus('');
   }
   function _toggleMagnet(){
     _magnetMode=!_magnetMode;
@@ -2974,27 +3028,134 @@ function importData(event){
     _toast('🚀 Launch!');
   }
   function _dropConfetti(){
+    const existing=_items.filter(p=>p.isConfetti).length;
+    if(existing>=40){_toast('🎊 Confetti overload!');return;}
+    const cap=Math.min(40,40-existing);
     const colors=['#00C896','#60A5FA','#F5A623','#F87171','#A78BFA','#FFE066','#FF69B4','#00E5FF'];
-    for(let i=0;i<40;i++){
+    for(let i=0;i<cap;i++){
       setTimeout(()=>{
         if(!_active)return;
         const el=document.createElement('div');el.className='nw-egg-el';
-        const size=8+Math.random()*10;
-        const x=Math.random()*window.innerWidth;
-        el.style.cssText=`position:fixed;left:${x}px;top:-20px;
-          width:${size}px;height:${size}px;
+        const size=8+Math.random()*10;const x=Math.random()*window.innerWidth;
+        el.style.cssText=`position:fixed;left:${x}px;top:-20px;width:${size}px;height:${size}px;
           background:${colors[Math.floor(Math.random()*colors.length)]};
           border-radius:${Math.random()>.5?'50%':'2px'};
-          pointer-events:none;z-index:9995;`;
+          pointer-events:none;z-index:9995;transition:opacity .5s;`;
         document.body.appendChild(el);
         const p={el,x,y:-20,w:size,h:size,
           vx:(Math.random()-.5)*4,vy:Math.random()*2+1,
           rot:Math.random()*360,rotV:(Math.random()-.5)*8,
-          dragging:false,grabOffX:0,grabOffY:0};
-        _confetti.push(p);
-      },i*40);
+          dragging:false,grabOffX:0,grabOffY:0,
+          isConfetti:true,life:420};  // ~7s at 60fps
+        _items.push(p);
+      },i*50);
     }
     _toast('🎊 Confetti!');
+  }
+
+  // ── NUKE ──
+  function _nuke(){
+    if(!_active)return;
+    _toast('☢️ NUKE INCOMING…');
+    const landing=document.getElementById('screen-landing');
+    // White flash
+    const flash=document.createElement('div');flash.className='nw-egg-el';
+    flash.style.cssText='position:fixed;inset:0;background:#fff;z-index:10003;pointer-events:none;opacity:.95;transition:opacity .6s;';
+    document.body.appendChild(flash);
+    requestAnimationFrame(()=>flash.style.opacity='0');
+    setTimeout(()=>flash.remove(),700);
+    // BIG screen shake
+    landing.classList.remove('nw-bigshaking');void landing.offsetWidth;
+    landing.classList.add('nw-bigshaking');
+    setTimeout(()=>landing.classList.remove('nw-bigshaking'),900);
+    // Wait a beat then explode everything
+    setTimeout(()=>{
+      if(!_active)return;
+      const vw=window.innerWidth,vh=window.innerHeight;
+
+      // Helper: measure element and add to physics
+      function breakBlock(el,extraVY=0,spin=6){
+        if(el.style.visibility==='hidden')return;
+        const r=el.getBoundingClientRect();
+        if(r.width<2||r.height<2)return;
+        const cs=getComputedStyle(el);
+        const clone=document.createElement('div');clone.className='nw-egg-el';
+        clone.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;
+          font-family:${cs.fontFamily};font-size:${cs.fontSize};font-weight:${cs.fontWeight};
+          color:${cs.color};background:${cs.background};
+          border-radius:${cs.borderRadius};padding:${cs.padding};
+          border:${cs.border};z-index:9996;pointer-events:none;
+          box-sizing:border-box;overflow:hidden;`;
+        clone.innerHTML=el.innerHTML;
+        document.body.appendChild(clone);
+        el.style.visibility='hidden';
+        _items.push({el:clone,x:r.left,y:r.top,w:r.width,h:Math.max(r.height,20),
+          vx:(Math.random()-.5)*18,vy:-(Math.random()*10+4)+extraVY,
+          rot:0,rotV:(Math.random()-.5)*spin,
+          dragging:false,grabOffX:0,grabOffY:0,isDebris:true});
+      }
+
+      // Helper: split text into individual flying chars
+      function breakChars(el){
+        if(el.style.visibility==='hidden')return;
+        const cs=getComputedStyle(el);
+        const origHTML=el.innerHTML;
+        // Temporarily rebuild as individual char spans for measurement
+        const chars=[...el.textContent];
+        el.innerHTML=chars.map(c=>`<span style="display:inline-block;white-space:pre">${c===' '?'&nbsp;':c}</span>`).join('');
+        const spans=[...el.querySelectorAll('span')];
+        spans.forEach((sp,idx)=>{
+          const sr=sp.getBoundingClientRect();
+          if(sr.width<1)return;
+          const charEl=document.createElement('div');charEl.className='nw-egg-el';
+          charEl.textContent=chars[idx]||' ';
+          charEl.style.cssText=`position:fixed;left:${sr.left}px;top:${sr.top}px;
+            font-family:${cs.fontFamily};font-size:${cs.fontSize};
+            font-weight:${cs.fontWeight};color:${cs.color};
+            z-index:9997;pointer-events:none;white-space:pre;line-height:1;`;
+          document.body.appendChild(charEl);
+          _items.push({el:charEl,x:sr.left,y:sr.top,
+            w:Math.max(sr.width,4),h:sr.height||parseInt(cs.fontSize)||20,
+            vx:(Math.random()-.5)*22,vy:-(Math.random()*14+6),
+            rot:0,rotV:(Math.random()-.5)*30,
+            dragging:false,grabOffX:0,grabOffY:0,isDebris:true});
+        });
+        el.style.visibility='hidden';
+      }
+
+      // Explode hero title and logo as individual chars
+      const h1=landing.querySelector('.lp-h1');if(h1)breakChars(h1);
+      const logoText=landing.querySelector('.lp-nav .nw-logo-text');if(logoText)breakChars(logoText);
+      const navLogo=landing.querySelector('.lp-nav .lp-nav-logo svg');if(navLogo)breakBlock(navLogo,-2,10);
+
+      // Explode sections as blocks
+      const targets=[
+        '.lp-badge','.lp-sub','.lp-trial-note',
+        '.lp-mock-card','.lp-section-title','.lp-section-sub',
+        '.lp-feat','.lp-step','.lp-price-card',
+        '.lp-footer','.lp-hero-actions',
+        '.lp-nav-progress'
+      ];
+      targets.forEach(sel=>{
+        landing.querySelectorAll(sel).forEach(el=>breakBlock(el));
+      });
+
+      // Nav falls upward
+      const nav=landing.querySelector('.lp-nav');
+      if(nav&&nav.style.visibility!=='hidden'){
+        const r=nav.getBoundingClientRect();
+        const navClone=document.createElement('div');navClone.className='nw-egg-el';
+        navClone.style.cssText=`position:fixed;left:0;top:${r.top}px;width:100%;height:${r.height}px;
+          background:rgba(13,15,20,.97);border-bottom:1px solid #232A3A;
+          z-index:9995;pointer-events:none;`;
+        navClone.innerHTML=nav.innerHTML;
+        document.body.appendChild(navClone);
+        nav.style.visibility='hidden';
+        _items.push({el:navClone,x:0,y:r.top,w:vw,h:r.height,
+          vx:0,vy:-8,rot:0,rotV:0,dragging:false,grabOffX:0,grabOffY:0,isDebris:true});
+      }
+    },120);
+    _hudStatus('☢️ NUKED — Shift+R to reset');
   }
 
   function _launch(){
@@ -3011,7 +3172,7 @@ function importData(event){
     const landing=document.getElementById('screen-landing');
     const btns=[...landing.querySelectorAll('button')].filter(b=>{
       const r=b.getBoundingClientRect();
-      return r.width>0&&r.height>0&&r.top>-300&&r.top<window.innerHeight+300;
+      return r.width>0&&r.height>0;  // capture ALL buttons, even off-screen
     });
 
     btns.forEach((btn,i)=>{
@@ -3029,8 +3190,11 @@ function importData(event){
       document.body.appendChild(el);
       btn.style.visibility='hidden';
 
+      const offBelow=rect.top>window.innerHeight+20;
+      const offAbove=rect.top<-rect.height;
+      const initVY=offBelow?(-Math.random()*20-18):offAbove?(Math.random()*8+4):(-Math.random()*10-3);
       const p={el,x:rect.left,y:rect.top,w:rect.width,h:rect.height,
-        vx:(Math.random()-.5)*14,vy:-Math.random()*10-3,
+        vx:(Math.random()-.5)*14,vy:initVY,
         rot:0,rotV:(Math.random()-.5)*6,dragging:false,grabOffX:0,grabOffY:0};
       setTimeout(()=>{if(_active)_items.push(p);},i*40);
 
@@ -3104,11 +3268,13 @@ function importData(event){
         if(_tornadoMode){
           const tdx=cx-(p.x+p.w/2),tdy=cy-(p.y+p.h/2);
           const td=Math.sqrt(tdx*tdx+tdy*tdy)||1;
-          // Tangential force (perpendicular to center)
-          p.vx+=(-tdy/td)*2.5*dt;
-          p.vy+=(tdx/td)*2.5*dt;
-          // Slight inward pull
-          p.vx+=tdx/td*0.3*dt;p.vy+=tdy/td*0.3*dt;
+          // Chaotic orbital motion — per-item phase creates wildly different orbits
+          const phase=i*2.618+_rainbowT*0.8;
+          const tangF=2.8+Math.sin(phase)*1.4+Math.cos(phase*0.7)*0.9;
+          p.vx+=(-tdy/td)*tangF*dt;p.vy+=(tdx/td)*tangF*dt;
+          // Oscillating radial force (some buttons pull in, some push out, changes over time)
+          const radF=Math.sin(_rainbowT*0.6+i*1.9)*0.9+Math.cos(_rainbowT*0.4+i*3.1)*0.5;
+          p.vx+=(tdx/td)*radF*dt;p.vy+=(tdy/td)*radF*dt;
         }
         // Black hole pull
         if(_blackHole&&_blackHole.t<_blackHole.maxT){
@@ -3137,24 +3303,25 @@ function importData(event){
         }
         if(p.x+p.w>=vw){p.x=vw-p.w;p.vx*=-BOUNCE;p.rotV*=-0.6;}
         if(p.x<0){p.x=0;p.vx*=-BOUNCE;p.rotV*=-0.6;}
-        // Collisions
-        for(let j=i+1;j<n;j++){if(!_items[j].dragging)_collide(p,_items[j]);}
+        // Confetti special handling: extra air drag + lifespan
+        if(p.isConfetti){
+          p.vx*=0.985;p.vy*=0.995; // more drag
+          if(p.life!==undefined){
+            p.life-=dt;
+            if(p.life<60)p.el.style.opacity=Math.max(0,p.life/60);
+            if(p.life<-10){p.el.remove();_items.splice(i,1);i--;n--;continue;}
+          }
+        }
+        // Collisions (skip confetti and debris)
+        if(!p.isConfetti&&!p.isDebris){
+          for(let j=i+1;j<n;j++){
+            if(!_items[j].dragging&&!_items[j].isConfetti&&!_items[j].isDebris)_collide(p,_items[j]);
+          }
+        }
         p.el.style.left=p.x+'px';p.el.style.top=p.y+'px';
         p.el.style.transform=`rotate(${p.rot}deg)`;
       }
-      // Confetti physics
-      for(let ci=_confetti.length-1;ci>=0;ci--){
-        const c=_confetti[ci];
-        c.vy+=0.25*dt;c.vx*=0.99;
-        c.x+=c.vx*dt;c.y+=c.vy*dt;
-        c.rotV*=0.97;c.rot+=c.rotV*dt;
-        if(c.y>vh+20){c.el.remove();_confetti.splice(ci,1);continue;}
-        if(c.y+c.h>=vh){c.y=vh-c.h;c.vy*=-0.45;c.vx*=0.8;}
-        if(c.x<0){c.x=0;c.vx*=-0.6;}
-        if(c.x+c.w>vw){c.x=vw-c.w;c.vx*=-0.6;}
-        c.el.style.left=c.x+'px';c.el.style.top=c.y+'px';
-        c.el.style.transform=`rotate(${c.rot}deg)`;
-      }
+      // Confetti now handled as part of _items
       // Bomb physics
       for(let bi=_bombs.length-1;bi>=0;bi--){
         const b=_bombs[bi];
