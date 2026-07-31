@@ -1454,8 +1454,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 
     <div class="settings-section">
       <h3>💳 Subscription</h3>
-      <div id="sub-status-display" style="margin-bottom:12px;"></div>
-      <div style="font-size:12px;color:var(--muted);">To manage billing, visit your Stripe portal. (Stripe integration coming once your key is added.)</div>
+      <div id="sub-status-display" style="margin-bottom:14px;"></div>
+      <div id="cancel-sub-wrap" style="display:none;">
+        <button id="cancel-sub-btn" onclick="promptCancelSubscription()" style="background:none;border:1px solid var(--danger);color:var(--danger);border-radius:9px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Cancel subscription</button>
+        <div style="font-size:11px;color:var(--muted);margin-top:7px;">Cancelling during your trial means you won't be charged. Cancelling a paid plan keeps your access until the end of the billing period.</div>
+      </div>
     </div>
 
     <div class="settings-section">
@@ -2775,13 +2778,20 @@ function savePTOSettings(){
 }
 function updateSubscriptionBadge(){
   const sub=user.subscription;const el=document.getElementById('sub-status-display');if(!el)return;
+  const cancelWrap=document.getElementById('cancel-sub-wrap');
   if(sub.status==='trial'){
     const daysLeft=Math.max(0,Math.ceil((new Date(sub.trialEnd)-new Date())/(1000*60*60*24)));
     el.innerHTML=`<div class="sub-badge trial">⏳ Free Trial · ${daysLeft} day${daysLeft!==1?'s':''} remaining</div>`;
+    if(cancelWrap)cancelWrap.style.display='block';
   }else if(sub.status==='active'){
     el.innerHTML=`<div class="sub-badge">✓ Active · ${sub.plan==='annual'?'Annual — $49.99/yr':'Monthly — $6.99/mo'}</div>`;
+    if(cancelWrap)cancelWrap.style.display='block';
+  }else if(sub.status==='canceling'){
+    el.innerHTML=`<div class="sub-badge trial">✓ Cancelled — access continues until period end</div>`;
+    if(cancelWrap)cancelWrap.style.display='none';
   }else{
     el.innerHTML=`<div class="sub-badge trial">No active subscription</div>`;
+    if(cancelWrap)cancelWrap.style.display='none';
   }
 }
 
@@ -2913,6 +2923,59 @@ function applyTheme(){
   document.documentElement.removeAttribute('data-theme');
   if(t!=='default')document.documentElement.setAttribute('data-theme',t);
 }
+// ── SUBSCRIPTION CANCEL ──
+function promptCancelSubscription(){
+  const sub=user.subscription||{};
+  const isTrial=sub.status==='trial';
+  const daysLeft=isTrial?Math.max(0,Math.ceil((new Date(sub.trialEnd||0)-new Date())/(86400000))):0;
+
+  const modal=document.createElement('div');
+  modal.id='cancel-sub-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9500;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 26px;max-width:380px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,.5);">
+    <div style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;margin-bottom:10px;">Cancel subscription?</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:22px;">
+      ${isTrial
+        ?`Your free trial has <strong style="color:var(--text)">${daysLeft} day${daysLeft!==1?'s':''} remaining</strong>. Cancelling now means <strong style="color:var(--good)">you won't be charged</strong> and access ends immediately.`
+        :`Your subscription will remain active until the end of your current billing period. You won't be charged after that.`
+      }
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="document.getElementById('cancel-sub-modal').remove()" style="padding:9px 20px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;font-weight:600;">Keep subscription</button>
+      <button onclick="document.getElementById('cancel-sub-modal').remove();doCancel()" style="padding:9px 20px;border-radius:9px;border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:13px;font-weight:600;">${isTrial?'Cancel trial':'Cancel plan'}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function doCancel(){
+  const btn=document.getElementById('cancel-sub-btn');
+  if(btn){btn.disabled=true;btn.textContent='Cancelling…';}
+  try{
+    const res=await fetch('/api/cancel-subscription',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        userId:user.id,
+        subscriptionId:user.subscription?.stripeSubscriptionId,
+        customerId:user.subscription?.stripeCustomerId
+      })
+    });
+    const data=await res.json();
+    if(data.success){
+      user.subscription.status='canceling';
+      await saveUserImmediate();
+      updateSubscriptionBadge();
+      showToast('Subscription cancelled — no further charges.','good');
+    }else{
+      throw new Error(data.error||'Unknown error');
+    }
+  }catch(err){
+    showToast('Error cancelling: '+err.message,'danger');
+    if(btn){btn.disabled=false;btn.textContent='Cancel subscription';}
+  }
+}
+
 function exportData(){
   const blob=new Blob([JSON.stringify(user.data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');
