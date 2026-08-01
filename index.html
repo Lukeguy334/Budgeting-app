@@ -3371,7 +3371,7 @@ function importData(event){
     _toast(labels[_gravMode]);_hudStatus(labels[_gravMode]);
   }
   function _spawnBlackHole(){
-    if(_blackHoles.length>=5){_blackHoles.shift();} // max 5 at once
+    if(_blackHoles.length>=3){_blackHoles.shift();} // max 3 at once
     const el=document.createElement('div');el.className='nw-egg-el';
     el.style.cssText=`position:fixed;left:${_mouseX}px;top:${_mouseY}px;
       width:60px;height:60px;border-radius:50%;z-index:9990;pointer-events:none;
